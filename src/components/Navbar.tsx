@@ -1,0 +1,99 @@
+import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/logo.png";
+import { Button } from "@/components/ui/button";
+import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, Shield } from "lucide-react";
+import { useState } from "react";
+
+const navItems = [
+  { label: "Accueil", path: "/" },
+  { label: "Entreprises", path: "/entreprises", icon: Briefcase },
+  { label: "Marketplace P2P", path: "/marketplace", icon: ShoppingCart },
+  { label: "Tableau de bord", path: "/dashboard", icon: BarChart3 },
+];
+
+const Navbar = () => {
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/30">
+      <div className="container mx-auto flex items-center justify-between h-16 px-4">
+        <Link to="/" className="flex items-center gap-3">
+          <img src={logo} alt="MSN Hors Cote" className="h-10 w-10" />
+          <div>
+            <span className="font-heading font-bold text-lg text-gradient-gold">MSN</span>
+            <span className="font-heading text-sm text-muted-foreground ml-1">Hors Cote</span>
+          </div>
+        </Link>
+
+        <div className="hidden md:flex items-center gap-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                location.pathname === item.path
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="hidden md:flex items-center gap-3">
+          <Link to="/login">
+            <Button variant="ghost" size="sm">
+              <User className="mr-2 h-4 w-4" />
+              Connexion
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button variant="gold" size="sm">
+              S'inscrire
+            </Button>
+          </Link>
+        </div>
+
+        <button
+          className="md:hidden text-foreground"
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {mobileOpen && (
+        <div className="md:hidden bg-card border-t border-border animate-slide-up">
+          <div className="flex flex-col p-4 gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setMobileOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  location.pathname === item.path
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="flex gap-2 mt-2 pt-2 border-t border-border">
+              <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" className="w-full" size="sm">Connexion</Button>
+              </Link>
+              <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
+                <Button variant="gold" className="w-full" size="sm">S'inscrire</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
+
+export default Navbar;
