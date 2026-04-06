@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, Shield } from "lucide-react";
+import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Accueil", path: "/" },
@@ -13,7 +14,14 @@ const navItems = [
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, profile, signOut, hasRole } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/30">
@@ -43,23 +51,40 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login">
-            <Button variant="ghost" size="sm">
-              <User className="mr-2 h-4 w-4" />
-              Connexion
-            </Button>
-          </Link>
-          <Link to="/register">
-            <Button variant="gold" size="sm">
-              S'inscrire
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <span className="text-xs text-muted-foreground font-mono">
+                {profile?.msn_id}
+              </span>
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <User className="mr-2 h-4 w-4" />
+                  {profile?.first_name || "Mon compte"}
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Déconnexion
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  <User className="mr-2 h-4 w-4" />
+                  Connexion
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button variant="gold" size="sm">
+                  S'inscrire
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
-        <button
-          className="md:hidden text-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
+        <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -68,26 +93,29 @@ const Navbar = () => {
         <div className="md:hidden bg-card border-t border-border animate-slide-up">
           <div className="flex flex-col p-4 gap-2">
             {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
+              <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
                 className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                  location.pathname === item.path
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
+                  location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}>
                 {item.label}
               </Link>
             ))}
             <div className="flex gap-2 mt-2 pt-2 border-t border-border">
-              <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" className="w-full" size="sm">Connexion</Button>
-              </Link>
-              <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
-                <Button variant="gold" className="w-full" size="sm">S'inscrire</Button>
-              </Link>
+              {user ? (
+                <Button variant="outline" className="w-full" size="sm" onClick={() => { handleSignOut(); setMobileOpen(false); }}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Déconnexion
+                </Button>
+              ) : (
+                <>
+                  <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full" size="sm">Connexion</Button>
+                  </Link>
+                  <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="gold" className="w-full" size="sm">S'inscrire</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
