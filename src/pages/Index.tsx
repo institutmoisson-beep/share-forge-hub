@@ -4,11 +4,38 @@ import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import logo from "@/assets/logo.png";
 import Navbar from "@/components/Navbar";
-import { mockCompanies } from "@/data/mockData";
 import CompanyCard from "@/components/CompanyCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const featuredCompanies = mockCompanies.slice(0, 3);
+  const { data: companies = [] } = useQuery({
+    queryKey: ["featured-companies"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["platform-stats"],
+    queryFn: async () => {
+      const [companiesRes, sharesRes] = await Promise.all([
+        supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("user_shares").select("id", { count: "exact", head: true }),
+      ]);
+      return {
+        companies: companiesRes.count || 0,
+        investments: sharesRes.count || 0,
+      };
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,9 +84,9 @@ const Index = () => {
       <section className="border-y border-border bg-card/50">
         <div className="container mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { icon: <Building2 className="h-6 w-6 text-primary" />, value: "50+", label: "Entreprises Partenaires" },
-            { icon: <Users className="h-6 w-6 text-primary" />, value: "2,500+", label: "Investisseurs Actifs" },
-            { icon: <TrendingUp className="h-6 w-6 text-primary" />, value: "15M+", label: "FCFA en Transactions" },
+            { icon: <Building2 className="h-6 w-6 text-primary" />, value: `${stats?.companies || 0}`, label: "Entreprises Partenaires" },
+            { icon: <Users className="h-6 w-6 text-primary" />, value: `${stats?.investments || 0}`, label: "Investissements" },
+            { icon: <TrendingUp className="h-6 w-6 text-primary" />, value: "FCFA", label: "Transactions sécurisées" },
             { icon: <Shield className="h-6 w-6 text-primary" />, value: "100%", label: "Sécurisé" },
           ].map((stat, i) => (
             <div key={i} className="text-center animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
@@ -84,20 +111,45 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredCompanies.map((company) => (
-            <CompanyCard key={company.id} company={company} />
-          ))}
-        </div>
+        {companies.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {companies.map((company) => (
+              <CompanyCard key={company.id} company={{
+                id: company.id,
+                name: company.name,
+                registreCommerce: company.registre_commerce,
+                country: company.country,
+                city: company.city,
+                location: company.location,
+                sector: company.sector,
+                totalShares: company.total_shares,
+                availableShares: company.available_shares,
+                pricePerShare: Number(company.price_per_share),
+                previousPrice: Number(company.previous_price),
+                logo: company.logo_url || "",
+                description: company.description,
+                createdAt: company.created_at,
+              }} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 glass-card">
+            <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground text-lg mb-2">Aucune entreprise disponible pour le moment.</p>
+            <p className="text-sm text-muted-foreground">Les entreprises seront ajoutées par l'administrateur.</p>
+          </div>
+        )}
 
-        <div className="text-center mt-10">
-          <Link to="/entreprises">
-            <Button variant="gold-outline" size="lg">
-              Voir toutes les entreprises
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+        {companies.length > 0 && (
+          <div className="text-center mt-10">
+            <Link to="/entreprises">
+              <Button variant="gold-outline" size="lg">
+                Voir toutes les entreprises
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* How It Works */}
