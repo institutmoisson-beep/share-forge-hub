@@ -1,5 +1,9 @@
-import { corsHeaders } from '@supabase/supabase-js/cors'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,7 +17,6 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Create admin user
     const { data: userData, error: createError } = await supabase.auth.admin.createUser({
       email: 'picelvus@gmail.com',
       password: 'Pisecret123#MSNX',
@@ -28,7 +31,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Assign admin role
     const { error: roleError } = await supabase.from('user_roles').insert({
       user_id: userData.user.id,
       role: 'admin'
