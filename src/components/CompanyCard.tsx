@@ -1,5 +1,5 @@
 import { Building2, TrendingUp, TrendingDown, MapPin } from "lucide-react";
-import { Company } from "@/data/mockData";
+import { Company } from "@/types/company";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -9,17 +9,21 @@ interface CompanyCardProps {
 
 const CompanyCard = ({ company }: CompanyCardProps) => {
   const priceChange = company.pricePerShare - company.previousPrice;
-  const priceChangePercent = ((priceChange / company.previousPrice) * 100).toFixed(2);
+  const priceChangePercent = company.previousPrice > 0 ? ((priceChange / company.previousPrice) * 100).toFixed(2) : "0";
   const isPositive = priceChange >= 0;
   const soldShares = company.totalShares - company.availableShares;
-  const soldPercent = (soldShares / company.totalShares) * 100;
+  const soldPercent = company.totalShares > 0 ? (soldShares / company.totalShares) * 100 : 0;
 
   return (
     <div className="glass-card p-6 hover:border-primary/30 transition-all duration-300 group animate-scale-in">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-primary" />
+          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center overflow-hidden">
+            {company.logo ? (
+              <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
+            ) : (
+              <Building2 className="h-6 w-6 text-primary" />
+            )}
           </div>
           <div>
             <h3 className="font-heading font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -28,10 +32,12 @@ const CompanyCard = ({ company }: CompanyCardProps) => {
             <p className="text-xs text-muted-foreground">{company.sector}</p>
           </div>
         </div>
-        <div className={`flex items-center gap-1 text-sm font-semibold ${isPositive ? "text-success" : "text-destructive"}`}>
-          {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-          {isPositive ? "+" : ""}{priceChangePercent}%
-        </div>
+        {company.previousPrice > 0 && (
+          <div className={`flex items-center gap-1 text-sm font-semibold ${isPositive ? "text-success" : "text-destructive"}`}>
+            {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            {isPositive ? "+" : ""}{priceChangePercent}%
+          </div>
+        )}
       </div>
 
       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{company.description}</p>
@@ -73,7 +79,9 @@ const CompanyCard = ({ company }: CompanyCardProps) => {
         <Link to={`/entreprises/${company.id}`} className="flex-1">
           <Button variant="outline" size="sm" className="w-full">Détails</Button>
         </Link>
-        <Button variant="gold" size="sm" className="flex-1">Acheter</Button>
+        <Link to={`/entreprises/${company.id}`} className="flex-1">
+          <Button variant="gold" size="sm" className="w-full">Acheter</Button>
+        </Link>
       </div>
     </div>
   );
