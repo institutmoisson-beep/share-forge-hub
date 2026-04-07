@@ -56,11 +56,11 @@ const Index = () => {
               <span className="text-foreground">Hors Cote</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-4">
-              Plateforme d'Investissement Participatif Privé
+               Plateforme de Participation Privée
             </p>
             <p className="text-muted-foreground max-w-xl mx-auto mb-10">
-              Investissez dans les entreprises partenaires non cotées en bourse. 
-              Achetez, vendez et gérez vos titres en toute sécurité.
+               Participez au financement des entreprises partenaires non cotées sur le marché public.
+               Achetez, revendez et gérez vos titres en toute sécurité.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/entreprises">
@@ -85,7 +85,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
             { icon: <Building2 className="h-6 w-6 text-primary" />, value: `${stats?.companies || 0}`, label: "Entreprises Partenaires" },
-            { icon: <Users className="h-6 w-6 text-primary" />, value: `${stats?.investments || 0}`, label: "Investissements" },
+            { icon: <Users className="h-6 w-6 text-primary" />, value: `${stats?.investments || 0}`, label: "Participations" },
             { icon: <TrendingUp className="h-6 w-6 text-primary" />, value: "FCFA", label: "Transactions sécurisées" },
             { icon: <Shield className="h-6 w-6 text-primary" />, value: "100%", label: "Sécurisé" },
           ].map((stat, i) => (
@@ -107,7 +107,7 @@ const Index = () => {
             Entreprises <span className="text-gradient-gold">Partenaires</span>
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Découvrez les entreprises dans lesquelles vous pouvez investir et devenez actionnaire.
+            Découvrez les entreprises dans lesquelles vous pouvez participer et devenir détenteur de titres.
           </p>
         </div>
 
@@ -163,7 +163,7 @@ const Index = () => {
             {[
               { step: "01", title: "Créez votre compte", desc: "Inscrivez-vous gratuitement et rechargez votre portefeuille intégré." },
               { step: "02", title: "Choisissez une entreprise", desc: "Parcourez l'annuaire des entreprises partenaires et analysez les opportunités." },
-              { step: "03", title: "Investissez & Gérez", desc: "Achetez des actions, suivez vos rendements et vendez sur le marketplace P2P." },
+              { step: "03", title: "Participez & Gérez", desc: "Achetez des titres, suivez vos rendements et revendez sur le marché secondaire." },
             ].map((item, i) => (
               <div key={i} className="glass-card p-8 text-center animate-slide-up" style={{ animationDelay: `${i * 150}ms` }}>
                 <div className="text-5xl font-heading font-bold text-gradient-gold mb-4">{item.step}</div>
@@ -184,7 +184,7 @@ const Index = () => {
               <span className="font-heading font-bold text-gradient-gold">MSN Hors Cote</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 MSN Hors Cote. Tous droits réservés. Plateforme d'investissement participatif privé.
+              © 2024 MSN Hors Cote. Tous droits réservés. Plateforme de participation privée.
             </p>
           </div>
         </div>

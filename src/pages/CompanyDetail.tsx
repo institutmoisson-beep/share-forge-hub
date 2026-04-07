@@ -3,12 +3,19 @@ import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Building2, MapPin, FileText, TrendingUp, TrendingDown, ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { invokePlatformAction } from "@/lib/platform-actions";
 
 const CompanyDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: company, isLoading } = useQuery({
     queryKey: ["company", id],
@@ -18,6 +25,24 @@ const CompanyDetail = () => {
       return data;
     },
     enabled: !!id,
+  });
+
+  const buyMutation = useMutation({
+    mutationFn: async () => invokePlatformAction<{ orderNumber: string }>("purchase_company_shares", {
+      companyId: id,
+      quantity,
+    }),
+    onSuccess: async (response) => {
+      toast.success(`Achat confirmé. Référence: ${response.orderNumber}`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company", id] }),
+        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
+        queryClient.invalidateQueries({ queryKey: ["user_shares"] }),
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+      ]);
+      navigate("/dashboard");
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   if (isLoading) {
@@ -52,6 +77,21 @@ const CompanyDetail = () => {
   const soldPercent = company.total_shares > 0 
     ? ((company.total_shares - company.available_shares) / company.total_shares * 100).toFixed(1) 
     : "0";
+
+  const handleBuy = () => {
+    if (!user) {
+      toast.error("Connectez-vous pour acheter des titres.");
+      navigate("/login");
+      return;
+    }
+
+    if (company.available_shares <= 0) {
+      toast.error("Cette entreprise n'a plus de titres disponibles.");
+      return;
+    }
+
+    buyMutation.mutate();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,12 +201,12 @@ const CompanyDetail = () => {
                 </div>
               </div>
 
-              <Button variant="gold" size="lg" className="w-full">
+               <Button variant="gold" size="lg" className="w-full" onClick={handleBuy} disabled={buyMutation.isPending || company.available_shares <= 0}>
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                Acheter maintenant
+                 {buyMutation.isPending ? "Traitement..." : company.available_shares <= 0 ? "Indisponible" : "Acheter maintenant"}
               </Button>
               <p className="text-xs text-muted-foreground text-center mt-3">
-                Les achats sont soumis à validation. Un reçu avec code QR sera généré.
+                 L'achat débite le portefeuille et génère une référence unique liée au titre.
               </p>
             </div>
           </div>
