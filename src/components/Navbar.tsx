@@ -1,14 +1,14 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, LogOut } from "lucide-react";
+import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Accueil", path: "/" },
   { label: "Entreprises", path: "/entreprises", icon: Briefcase },
-  { label: "Marketplace P2P", path: "/marketplace", icon: ShoppingCart },
+  { label: "Marché secondaire", path: "/marketplace", icon: ShoppingCart },
   { label: "Tableau de bord", path: "/dashboard", icon: BarChart3 },
 ];
 
@@ -17,6 +17,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, profile, signOut, hasRole } = useAuth();
+  const isAdmin = hasRole("admin") || user?.email === "picelvus@gmail.com";
 
   const handleSignOut = async () => {
     await signOut();
@@ -62,6 +63,14 @@ const Navbar = () => {
                   {profile?.first_name || "Mon compte"}
                 </Button>
               </Link>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Administration
+                  </Button>
+                </Link>
+              )}
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Déconnexion
@@ -102,10 +111,20 @@ const Navbar = () => {
             ))}
             <div className="flex gap-2 mt-2 pt-2 border-t border-border">
               {user ? (
-                <Button variant="outline" className="w-full" size="sm" onClick={() => { handleSignOut(); setMobileOpen(false); }}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Déconnexion
-                </Button>
+                <div className="grid w-full gap-2">
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" className="w-full" size="sm">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Administration
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" className="w-full" size="sm" onClick={() => { handleSignOut(); setMobileOpen(false); }}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Déconnexion
+                  </Button>
+                </div>
               ) : (
                 <>
                   <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>

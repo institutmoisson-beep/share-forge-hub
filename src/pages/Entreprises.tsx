@@ -40,7 +40,7 @@ const EntreprisesPage = () => {
             <Building2 className="inline h-10 w-10 text-primary mr-3" />
             Entreprises <span className="text-gradient-gold">Partenaires</span>
           </h1>
-          <p className="text-muted-foreground">Explorez toutes les entreprises et investissez dans leurs actions.</p>
+          <p className="text-muted-foreground">Explorez toutes les entreprises et participez à leur développement via leurs titres.</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">

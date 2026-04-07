@@ -53,7 +53,7 @@ const RegisterPage = () => {
           <div className="text-center mb-8">
             <img src={logo} alt="MSN" className="h-16 w-16 mx-auto mb-4" />
             <h1 className="font-heading text-2xl font-bold text-foreground">Créer un compte</h1>
-            <p className="text-muted-foreground text-sm mt-1">Rejoignez MSN Hors Cote et investissez</p>
+            <p className="text-muted-foreground text-sm mt-1">Rejoignez MSN Hors Cote et participez</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
