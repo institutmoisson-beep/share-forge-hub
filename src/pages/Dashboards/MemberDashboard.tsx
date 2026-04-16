@@ -37,7 +37,6 @@ const StatusBadge = ({ status }: { status: string }) => {
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono border ${cls}`}>{label}</span>;
 };
 
-// ✅ Type helper pour les companies joinées
 type ShareWithCompany = {
   id: string;
   user_id: string;
@@ -83,7 +82,11 @@ const MemberDashboard = () => {
   const { data: wallet, isLoading: walletLoading } = useQuery({
     queryKey: ["wallet", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("wallets").select("*").eq("user_id", user!.id).single();
+      const { data, error } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -106,10 +109,11 @@ const MemberDashboard = () => {
     refetchInterval: 15000,
   });
 
+  // FIX: transactions query ne dépend plus de wallet pour être activée
+  // On utilise user_id directement pour filtrer
   const { data: transactions = [], isLoading: txLoading } = useQuery({
     queryKey: ["transactions", user?.id],
     queryFn: async () => {
-      if (!wallet?.id) return [];
       const { data, error } = await supabase
         .from("wallet_transactions")
         .select("*")
@@ -119,13 +123,17 @@ const MemberDashboard = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!wallet,
+    // FIX: activé dès que user existe, plus besoin d'attendre wallet
+    enabled: !!user,
   });
 
   const { data: paymentServices = [] } = useQuery({
     queryKey: ["payment-services"],
     queryFn: async () => {
-      const { data } = await supabase.from("payment_services").select("*").eq("is_active", true);
+      const { data } = await supabase
+        .from("payment_services")
+        .select("*")
+        .eq("is_active", true);
       return data || [];
     },
   });
@@ -143,7 +151,7 @@ const MemberDashboard = () => {
     enabled: !!user,
   });
 
-  // ✅ Portfolio stats avec accès typé correct
+  // Portfolio stats
   const portfolioValue = shares.reduce((s, sh) => {
     const currentPrice = Number(sh.companies?.price_per_share ?? sh.purchase_price);
     return s + currentPrice * sh.quantity;
@@ -187,9 +195,21 @@ const MemberDashboard = () => {
     mutationFn: async () => {
       if (!amount || Number(amount) <= 0) throw new Error("Montant invalide.");
       if (!selectedService) throw new Error("Sélectionnez un service de paiement.");
+      // FIX: si wallet n'est pas encore chargé, on récupère l'id
+      let walletId = wallet?.id;
+      if (!walletId) {
+        const { data: w } = await supabase
+          .from("wallets")
+          .select("id")
+          .eq("user_id", user!.id)
+          .single();
+        walletId = w?.id;
+      }
+      if (!walletId) throw new Error("Portefeuille introuvable.");
+      
       const { error } = await supabase.from("wallet_transactions").insert({
         user_id: user!.id,
-        wallet_id: wallet!.id,
+        wallet_id: walletId,
         type: "deposit",
         amount: Number(amount),
         status: "pending",
@@ -216,9 +236,21 @@ const MemberDashboard = () => {
     mutationFn: async () => {
       if (!amount || Number(amount) <= 0) throw new Error("Montant invalide.");
       if (Number(amount) > balance) throw new Error("Solde insuffisant.");
+      
+      let walletId = wallet?.id;
+      if (!walletId) {
+        const { data: w } = await supabase
+          .from("wallets")
+          .select("id")
+          .eq("user_id", user!.id)
+          .single();
+        walletId = w?.id;
+      }
+      if (!walletId) throw new Error("Portefeuille introuvable.");
+
       const { error } = await supabase.from("wallet_transactions").insert({
         user_id: user!.id,
-        wallet_id: wallet!.id,
+        wallet_id: walletId,
         type: "withdrawal",
         amount: Number(amount),
         status: "pending",
@@ -365,11 +397,11 @@ const MemberDashboard = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "SOLDE DISPONIBLE", value: fmtShort(balance) + " FCFA", sub: "Liquidités", color: "amber", loading: walletLoading },
-                { label: "VALEUR PORTEFEUILLE", value: fmtShort(portfolioValue) + " FCFA", sub: `${shares.length} ligne(s)`, color: "emerald", loading: false },
-                { label: "PLUS/MOINS VALUE", value: (portfolioGain >= 0 ? "+" : "") + fmtShort(portfolioGain) + " FCFA", sub: `${portfolioPct}%`, color: portfolioGain >= 0 ? "emerald" : "rose", loading: false },
-                { label: "ACTIFS TOTAUX", value: fmtShort(totalAssets) + " FCFA", sub: "Liquide + Investi", color: "blue", loading: false },
-              ].map(({ label, value, sub, color, loading }) => {
+                { label: "SOLDE DISPONIBLE", value: walletLoading ? "..." : fmtShort(balance) + " FCFA", sub: "Liquidités", color: "amber" },
+                { label: "VALEUR PORTEFEUILLE", value: fmtShort(portfolioValue) + " FCFA", sub: `${shares.length} ligne(s)`, color: "emerald" },
+                { label: "PLUS/MOINS VALUE", value: (portfolioGain >= 0 ? "+" : "") + fmtShort(portfolioGain) + " FCFA", sub: `${portfolioPct}%`, color: portfolioGain >= 0 ? "emerald" : "rose" },
+                { label: "ACTIFS TOTAUX", value: fmtShort(totalAssets) + " FCFA", sub: "Liquide + Investi", color: "blue" },
+              ].map(({ label, value, sub, color }) => {
                 const cls: { [k: string]: string } = {
                   amber: "border-amber-500/20 from-amber-500/10",
                   emerald: "border-emerald-500/20 from-emerald-500/10",
@@ -378,15 +410,9 @@ const MemberDashboard = () => {
                 };
                 return (
                   <div key={label} className={`rounded-2xl border bg-gradient-to-br to-transparent p-5 ${cls[color]}`}>
-                    {loading ? (
-                      <div className="h-6 w-24 bg-white/5 rounded animate-pulse" />
-                    ) : (
-                      <>
-                        <p className="font-mono text-[10px] text-white/30 tracking-widest mb-1">{label}</p>
-                        <p className="font-mono font-bold text-white text-xl">{value}</p>
-                        <p className="font-mono text-[10px] text-white/30 mt-0.5">{sub}</p>
-                      </>
-                    )}
+                    <p className="font-mono text-[10px] text-white/30 tracking-widest mb-1">{label}</p>
+                    <p className="font-mono font-bold text-white text-xl">{value}</p>
+                    <p className="font-mono text-[10px] text-white/30 mt-0.5">{sub}</p>
                   </div>
                 );
               })}
@@ -459,7 +485,9 @@ const MemberDashboard = () => {
                 <button onClick={() => setActiveTab("transactions")} className="font-mono text-[10px] text-amber-400/60 hover:text-amber-400 transition-colors">VOIR TOUT →</button>
               </div>
               <div className="divide-y divide-white/5">
-                {transactions.slice(0, 5).map((tx: any) => {
+                {txLoading ? (
+                  <div className="p-6 text-center"><Loader2 className="h-5 w-5 text-amber-400 animate-spin mx-auto" /></div>
+                ) : transactions.slice(0, 5).map((tx: any) => {
                   const [label, color] = txTypeStyle[tx.type] || [tx.type, "text-white/40"];
                   return (
                     <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-white/2 transition-colors">
@@ -484,7 +512,9 @@ const MemberDashboard = () => {
                     </div>
                   );
                 })}
-                {transactions.length === 0 && <div className="p-8 text-center font-mono text-xs text-white/20">AUCUNE TRANSACTION</div>}
+                {!txLoading && transactions.length === 0 && (
+                  <div className="p-8 text-center font-mono text-xs text-white/20">AUCUNE TRANSACTION</div>
+                )}
               </div>
             </div>
           </div>
@@ -519,7 +549,6 @@ const MemberDashboard = () => {
             ) : (
               <div className="space-y-3">
                 {shares.map(sh => {
-                  // ✅ Accès typé correct
                   const cp = Number(sh.companies?.price_per_share ?? sh.purchase_price);
                   const pp = Number(sh.purchase_price);
                   const val = cp * sh.quantity;
@@ -530,7 +559,7 @@ const MemberDashboard = () => {
 
                   return (
                     <div key={sh.id} className="rounded-2xl border border-white/5 p-5 hover:border-amber-500/15 transition-all" style={{ background: "rgba(255,255,255,0.02)" }}>
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                             {sh.companies?.logo_url
