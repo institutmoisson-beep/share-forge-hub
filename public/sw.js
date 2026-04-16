@@ -1,5 +1,5 @@
-const CACHE_NAME = "msn-hors-cote-v1";
-const CORE_ASSETS = ["/", "/manifest.webmanifest", "/pwa-192.png", "/pwa-512.png"];
+const CACHE_NAME = "msn-hors-cote-v2";
+const CORE_ASSETS = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)));
@@ -16,17 +16,22 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
+  const url = new URL(event.request.url);
 
-      return fetch(event.request)
-        .then((response) => {
-          const clonedResponse = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clonedResponse));
-          return response;
-        })
-        .catch(() => caches.match("/"));
-    }),
+  // Never cache auth, API, or Supabase calls
+  if (
+    url.pathname.startsWith("/~oauth") ||
+    url.pathname.startsWith("/auth") ||
+    url.hostname.includes("supabase")
+  ) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/"))),
   );
 });

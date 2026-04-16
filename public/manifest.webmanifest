@@ -1,22 +1,26 @@
 {
   "name": "MSN Hors Cote",
-  "short_name": "MSN Hors Cote",
-  "description": "Plateforme de participation privée pour gérer les titres des entreprises partenaires.",
+  "short_name": "MSN HC",
+  "description": "Plateforme de participation privée — Gérez les titres des entreprises partenaires.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#08101d",
   "theme_color": "#08101d",
   "lang": "fr",
+  "orientation": "any",
+  "categories": ["finance", "business"],
   "icons": [
     {
       "src": "/pwa-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/pwa-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
