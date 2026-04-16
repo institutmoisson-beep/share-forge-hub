@@ -136,8 +136,7 @@ const KpiCard = ({ title, value, sub, icon: Icon, trend, accent="amber", loading
   const cls = acc[accent] || acc.amber;
   return (
     <div className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${cls}`}>
-      <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10 blur-xl"
-        style={{ background: `var(--color-${accent === "amber" ? "#f59e0b" : accent})` }} />
+      <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10 blur-xl" />
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-current/10`}>
           <Icon className={`h-5 w-5`} />
@@ -198,7 +197,8 @@ const AdminDashboard = () => {
   const [companyForm, setCompanyForm] = useState<CompanyFormState>(emptyCompanyForm);
   const [serviceForm, setServiceForm] = useState({ name:"",contact:"",payment_link:"",instructions:"",is_active:true });
   const [editingCompanyId, setEditingCompanyId] = useState<string|null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<Record<string,AppRole|">>({});
+  // FIX: type correct pour selectedRoles (AppRole | "")
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, AppRole | "">>({});
   const [companySearch, setCompanySearch] = useState("");
   const [txSearch, setTxSearch] = useState("");
   const [txFilter, setTxFilter] = useState("all");
@@ -206,6 +206,8 @@ const AdminDashboard = () => {
   const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{open:boolean;title:string;message:string;onConfirm:()=>void}|null>(null);
   const [liveTime, setLiveTime] = useState(new Date());
+  
+  // FIX: vérification admin incluant l'email spécial
   const isAdmin = hasRole("admin") || user?.email === "picelvus@gmail.com";
 
   useEffect(() => {
@@ -297,24 +299,43 @@ const AdminDashboard = () => {
 
   const companyMutation = useMutation({
     mutationFn: async () => {
-      const payload = {...companyForm,total_shares:Number(companyForm.total_shares),available_shares:Number(companyForm.available_shares),price_per_share:Number(companyForm.price_per_share),previous_price:Number(companyForm.previous_price||companyForm.price_per_share)};
+      const payload = {
+        ...companyForm,
+        total_shares:Number(companyForm.total_shares),
+        available_shares:Number(companyForm.available_shares),
+        price_per_share:Number(companyForm.price_per_share),
+        previous_price:Number(companyForm.previous_price||companyForm.price_per_share),
+      };
       if(!payload.name||!payload.registre_commerce||!payload.country||!payload.city) throw new Error("Champs obligatoires manquants.");
       if(payload.available_shares>payload.total_shares) throw new Error("Titres disponibles > total.");
-      if(editingCompanyId){const{error}=await supabase.from("companies").update(payload).eq("id",editingCompanyId);if(error)throw error;return "Entreprise mise à jour.";}
-      const{error}=await supabase.from("companies").insert({...payload,created_by:user?.id});if(error)throw error;return "Entreprise créée.";
+      if(editingCompanyId){
+        const{error}=await supabase.from("companies").update(payload).eq("id",editingCompanyId);
+        if(error)throw error;
+        return "Entreprise mise à jour.";
+      }
+      const{error}=await supabase.from("companies").insert({...payload,created_by:user?.id});
+      if(error)throw error;
+      return "Entreprise créée.";
     },
     onSuccess:async(msg)=>{toast.success(msg);setEditingCompanyId(null);setCompanyForm(emptyCompanyForm);setShowCompanyForm(false);await invalidate();},
     onError:(e:Error)=>toast.error(e.message),
   });
 
   const toggleCompanyMutation = useMutation({
-    mutationFn:async({id,status}:{id:string;status:boolean})=>{const{error}=await supabase.from("companies").update({is_active:status}).eq("id",id);if(error)throw error;},
+    mutationFn:async({id,status}:{id:string;status:boolean})=>{
+      const{error}=await supabase.from("companies").update({is_active:status}).eq("id",id);
+      if(error)throw error;
+    },
     onSuccess:async()=>{toast.success("Statut mis à jour.");await invalidate();},
     onError:(e:Error)=>toast.error(e.message),
   });
 
   const serviceMutation = useMutation({
-    mutationFn:async()=>{if(!serviceForm.name||!serviceForm.contact)throw new Error("Nom et contact requis.");const{error}=await supabase.from("payment_services").insert({...serviceForm,created_by:user?.id});if(error)throw error;},
+    mutationFn:async()=>{
+      if(!serviceForm.name||!serviceForm.contact)throw new Error("Nom et contact requis.");
+      const{error}=await supabase.from("payment_services").insert({...serviceForm,created_by:user?.id});
+      if(error)throw error;
+    },
     onSuccess:async()=>{toast.success("Service ajouté.");setServiceForm({name:"",contact:"",payment_link:"",instructions:"",is_active:true});await invalidate();},
     onError:(e:Error)=>toast.error(e.message),
   });
@@ -322,18 +343,30 @@ const AdminDashboard = () => {
   const roleMutation = useMutation({
     mutationFn:async({userId,role}:{userId:string;role:AppRole})=>{
       if(data?.roleRecords.some(r=>r.user_id===userId&&r.role===role))throw new Error("Rôle déjà attribué.");
-      const{error}=await supabase.from("user_roles").insert([{user_id:userId,role,assigned_by:user?.id}]);if(error)throw error;
+      const{error}=await supabase.from("user_roles").insert([{user_id:userId,role,assigned_by:user?.id}]);
+      if(error)throw error;
     },
-    onSuccess:async(_,v)=>{toast.success("Rôle attribué.");setSelectedRoles(p=>({...p,[v.userId]:""}));await queryClient.invalidateQueries({queryKey:["admin-v3"]});if(v.userId===user?.id)await refreshRoles();},
+    onSuccess:async(_,v)=>{
+      toast.success("Rôle attribué.");
+      setSelectedRoles(p=>({...p,[v.userId]:""}));
+      await queryClient.invalidateQueries({queryKey:["admin-v3"]});
+      if(v.userId===user?.id)await refreshRoles();
+    },
     onError:(e:Error)=>toast.error(e.message),
   });
 
   const removeRoleMutation = useMutation({
     mutationFn:async({userId,role}:{userId:string;role:string})=>{
-      const match=data?.roleRecords.find(r=>r.user_id===userId&&r.role===role);if(!match)throw new Error("Rôle introuvable.");
-      const{error}=await supabase.from("user_roles").delete().eq("id",match.id);if(error)throw error;
+      const match=data?.roleRecords.find(r=>r.user_id===userId&&r.role===role);
+      if(!match)throw new Error("Rôle introuvable.");
+      const{error}=await supabase.from("user_roles").delete().eq("id",match.id);
+      if(error)throw error;
     },
-    onSuccess:async(_,v)=>{toast.success("Rôle retiré.");await queryClient.invalidateQueries({queryKey:["admin-v3"]});if(v.userId===user?.id)await refreshRoles();},
+    onSuccess:async(_,v)=>{
+      toast.success("Rôle retiré.");
+      await queryClient.invalidateQueries({queryKey:["admin-v3"]});
+      if(v.userId===user?.id)await refreshRoles();
+    },
     onError:(e:Error)=>toast.error(e.message),
   });
 
@@ -345,12 +378,14 @@ const AdminDashboard = () => {
   });
 
   const filteredCompanies = useMemo(()=>(data?.companies||[]).filter(c=>c.name.toLowerCase().includes(companySearch.toLowerCase())||c.city.toLowerCase().includes(companySearch.toLowerCase())),[data?.companies,companySearch]);
+  
   const filteredTx = useMemo(()=>{
     let tx = data?.transactions||[];
     if(txFilter!=="all") tx = tx.filter(t=>t.status===txFilter);
     if(txSearch) tx = tx.filter(t=>(t.description||"").toLowerCase().includes(txSearch.toLowerCase()));
     return tx;
   },[data?.transactions,txSearch,txFilter]);
+  
   const filteredUsers = useMemo(()=>(data?.users||[]).filter(u=>!userSearch||`${u.first_name} ${u.last_name} ${u.msn_id}`.toLowerCase().includes(userSearch.toLowerCase())),[data?.users,userSearch]);
 
   if(authLoading||(isAdmin&&isLoading)){
@@ -490,9 +525,8 @@ const AdminDashboard = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Pie + stats */}
+          {/* Pie */}
           <div className="space-y-4">
-            {/* Sector Pie */}
             <div className="rounded-2xl border border-white/5 p-5" style={{background:"rgba(255,255,255,0.02)"}}>
               <h3 className="font-mono font-bold text-white text-sm tracking-wider mb-3">SECTEURS</h3>
               <ResponsiveContainer width="100%" height={140}>
@@ -504,13 +538,13 @@ const AdminDashboard = () => {
                 </RechartsPie>
               </ResponsiveContainer>
               <div className="space-y-1 mt-2">
-                {(data?.sectorData||[]).map((s:any,i:number)=>(
-                  <div key={s.name} className="flex items-center justify-between text-[10px] font-mono">
+                {(data?.sectorData||[]).map((sec:any,i:number)=>(
+                  <div key={sec.name} className="flex items-center justify-between text-[10px] font-mono">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full" style={{background:PIE_COLORS[i%PIE_COLORS.length]}}/>
-                      <span className="text-white/40 truncate max-w-[100px]">{s.name}</span>
+                      <span className="text-white/40 truncate max-w-[100px]">{sec.name}</span>
                     </div>
-                    <span className="text-white/70 font-bold">{s.value}</span>
+                    <span className="text-white/70 font-bold">{sec.value}</span>
                   </div>
                 ))}
               </div>
@@ -693,7 +727,17 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1.5">
-                              <button onClick={()=>{setEditingCompanyId(company.id);setCompanyForm({name:company.name,registre_commerce:company.registre_commerce,country:company.country,city:company.city,location:company.location,sector:isActivitySector(company.sector)?company.sector:ACTIVITY_SECTORS[0],description:company.description,total_shares:company.total_shares,available_shares:company.available_shares,price_per_share:Number(company.price_per_share),previous_price:Number(company.previous_price),logo_url:company.logo_url||"",video_url:company.video_url||"",is_active:company.is_active});setShowCompanyForm(true);}}
+                              <button onClick={()=>{
+                                setEditingCompanyId(company.id);
+                                setCompanyForm({
+                                  name:company.name,registre_commerce:company.registre_commerce,country:company.country,city:company.city,location:company.location,
+                                  sector:isActivitySector(company.sector)?company.sector:ACTIVITY_SECTORS[0],description:company.description,
+                                  total_shares:company.total_shares,available_shares:company.available_shares,
+                                  price_per_share:Number(company.price_per_share),previous_price:Number(company.previous_price),
+                                  logo_url:company.logo_url||"",video_url:company.video_url||"",is_active:company.is_active,
+                                });
+                                setShowCompanyForm(true);
+                              }}
                                 className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-mono hover:bg-blue-500/20 transition-all">
                                 ÉDITER
                               </button>
@@ -770,13 +814,18 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <select value={selectedRoles[profile.user_id]||""} onChange={e=>setSelectedRoles(p=>({...p,[profile.user_id]:e.target.value as AppRole}))}
+                            <select
+                              value={selectedRoles[profile.user_id]||""}
+                              onChange={e=>setSelectedRoles(p=>({...p,[profile.user_id]:e.target.value as AppRole | ""}))}
                               className="h-7 px-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white font-mono focus:outline-none focus:border-amber-500/30">
                               <option value="">— RÔLE —</option>
                               {APP_ROLES.map(r=><option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                             </select>
                             <button
-                              onClick={()=>{const r=selectedRoles[profile.user_id];if(r)roleMutation.mutate({userId:profile.user_id,role:r});}}
+                              onClick={()=>{
+                                const r = selectedRoles[profile.user_id];
+                                if(r) roleMutation.mutate({userId:profile.user_id,role:r as AppRole});
+                              }}
                               disabled={roleMutation.isPending||!selectedRoles[profile.user_id]}
                               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 text-[10px] font-mono hover:bg-amber-500/25 transition-all disabled:opacity-30">
                               <Plus className="h-3 w-3"/>ATTRIBUER
