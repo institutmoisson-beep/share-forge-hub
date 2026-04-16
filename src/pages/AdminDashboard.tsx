@@ -723,8 +723,12 @@ const AdminDashboard = () => {
                           <Button
                             size="sm"
                             variant="gold"
-                            onClick={() => roleMutation.mutate({ userId: profile.user_id, role: selectedRoles[profile.user_id] })}
-                            disabled={roleMutation.isPending}
+                            onClick={() => {
+                              const selectedRole = selectedRoles[profile.user_id];
+                              if (!selectedRole) return;
+                              roleMutation.mutate({ userId: profile.user_id, role: selectedRole });
+                            }}
+                            disabled={roleMutation.isPending || !selectedRoles[profile.user_id]}
                           >
                             Attribuer
                           </Button>
