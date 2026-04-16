@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
 import { Wallet, Briefcase, TrendingUp, BarChart3, Clock, ArrowUpRight, ArrowDownLeft, ShoppingCart, Send, LogIn, Shield, UserCircle, Store } from "lucide-react";
@@ -16,7 +17,7 @@ import { invokePlatformAction } from "@/lib/platform-actions";
 const formatCurrency = (value: number) => `${value.toLocaleString("fr-FR")} FCFA`;
 
 const Dashboard = () => {
-  const { user, profile, loading: authLoading, hasRole } = useAuth();
+  const { user, profile, loading: authLoading, hasRole, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
   const [activeDialog, setActiveDialog] = useState<null | "deposit" | "transfer" | "withdraw" | "profile" | "sell">(null);
   const [profileForm, setProfileForm] = useState({ first_name: profile?.first_name || "", last_name: profile?.last_name || "", phone: profile?.phone || "" });
@@ -85,6 +86,14 @@ const Dashboard = () => {
     ]);
   };
 
+  useEffect(() => {
+    setProfileForm({
+      first_name: profile?.first_name || "",
+      last_name: profile?.last_name || "",
+      phone: profile?.phone || "",
+    });
+  }, [profile?.first_name, profile?.last_name, profile?.phone]);
+
   const profileMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("profiles").update(profileForm).eq("user_id", user!.id);
@@ -93,6 +102,7 @@ const Dashboard = () => {
     onSuccess: async () => {
       toast.success("Profil mis à jour.");
       setActiveDialog(null);
+      await refreshProfile();
       await refreshUserData();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -219,6 +229,11 @@ const Dashboard = () => {
   const walletBalance = Number(wallet?.balance || 0);
 
   const openSellDialog = (share?: (typeof shares)[number]) => {
+    if (shares.length === 0) {
+      toast.error("Vous ne détenez encore aucun titre à vendre.");
+      return;
+    }
+
     if (share) {
       setSellForm({
         user_share_id: share.id,

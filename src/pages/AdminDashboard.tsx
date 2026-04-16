@@ -25,7 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { ACTIVITY_SECTORS } from "@/data/sectors";
+import { ACTIVITY_SECTORS, type ActivitySector } from "@/data/sectors";
 import { supabase } from "@/integrations/supabase/client";
 import { invokePlatformAction } from "@/lib/platform-actions";
 
@@ -43,7 +43,29 @@ const APP_ROLES = [
   "informaticien",
 ] as const;
 
-const emptyCompanyForm = {
+type AppRole = (typeof APP_ROLES)[number];
+
+type CompanyFormState = {
+  name: string;
+  registre_commerce: string;
+  country: string;
+  city: string;
+  location: string;
+  sector: ActivitySector;
+  description: string;
+  total_shares: number;
+  available_shares: number;
+  price_per_share: number;
+  previous_price: number;
+  logo_url: string;
+  video_url: string;
+  is_active: boolean;
+};
+
+const isActivitySector = (value: string): value is ActivitySector =>
+  (ACTIVITY_SECTORS as readonly string[]).includes(value);
+
+const emptyCompanyForm: CompanyFormState = {
   name: "",
   registre_commerce: "",
   country: "",
@@ -71,12 +93,12 @@ const emptyServiceForm = {
 const formatCurrency = (value: number) => `${value.toLocaleString("fr-FR")} FCFA`;
 
 const AdminDashboard = () => {
-  const { user, loading: authLoading, hasRole } = useAuth();
+  const { user, loading: authLoading, hasRole, refreshRoles } = useAuth();
   const queryClient = useQueryClient();
-  const [companyForm, setCompanyForm] = useState(emptyCompanyForm);
+  const [companyForm, setCompanyForm] = useState<CompanyFormState>(emptyCompanyForm);
   const [serviceForm, setServiceForm] = useState(emptyServiceForm);
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({});
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, AppRole | "">>({});
 
   const isAdmin = hasRole("admin") || user?.email === "picelvus@gmail.com";
 
@@ -248,7 +270,7 @@ const AdminDashboard = () => {
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
       if (!role) throw new Error("Choisissez un rôle avant validation.");
 
       const alreadyAssigned = data?.roleRecords.some((record) => record.user_id === userId && record.role === role);
@@ -256,18 +278,23 @@ const AdminDashboard = () => {
         throw new Error("Ce rôle est déjà attribué à cet utilisateur.");
       }
 
-      const { error } = await supabase.from("user_roles").insert({
-        user_id: userId,
-        role,
-        assigned_by: user?.id,
-      });
+      const { error } = await supabase.from("user_roles").insert([
+        {
+          user_id: userId,
+          role,
+          assigned_by: user?.id ?? null,
+        },
+      ]);
 
       if (error) throw error;
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       toast.success("Rôle attribué.");
+      setSelectedRoles((prev) => ({ ...prev, [variables.userId]: "" }));
       await queryClient.invalidateQueries({ queryKey: ["admin-dashboard-data"] });
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
+      if (variables.userId === user?.id) {
+        await refreshRoles();
+      }
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -280,9 +307,12 @@ const AdminDashboard = () => {
       const { error } = await supabase.from("user_roles").delete().eq("id", matchingRole.id);
       if (error) throw error;
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       toast.success("Rôle retiré.");
       await queryClient.invalidateQueries({ queryKey: ["admin-dashboard-data"] });
+      if (variables.userId === user?.id) {
+        await refreshRoles();
+      }
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -399,7 +429,13 @@ const AdminDashboard = () => {
 
                 <Input placeholder="Localisation" value={companyForm.location} onChange={(event) => setCompanyForm((prev) => ({ ...prev, location: event.target.value }))} />
 
-                <Select value={companyForm.sector} onValueChange={(value) => setCompanyForm((prev) => ({ ...prev, sector: value }))}>
+                <Select
+                  value={companyForm.sector}
+                  onValueChange={(value) => setCompanyForm((prev) => ({
+                    ...prev,
+                    sector: isActivitySector(value) ? value : ACTIVITY_SECTORS[0],
+                  }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Secteur d'activité" />
                   </SelectTrigger>
@@ -508,7 +544,7 @@ const AdminDashboard = () => {
                                   country: company.country,
                                   city: company.city,
                                   location: company.location,
-                                  sector: company.sector,
+                                   sector: isActivitySector(company.sector) ? company.sector : ACTIVITY_SECTORS[0],
                                   description: company.description,
                                   total_shares: company.total_shares,
                                   available_shares: company.available_shares,
@@ -671,7 +707,7 @@ const AdminDashboard = () => {
                         <div className="flex justify-end gap-2">
                           <Select
                             value={selectedRoles[profile.user_id] || ""}
-                            onValueChange={(value) => setSelectedRoles((prev) => ({ ...prev, [profile.user_id]: value }))}
+                             onValueChange={(value) => setSelectedRoles((prev) => ({ ...prev, [profile.user_id]: value as AppRole }))}
                           >
                             <SelectTrigger className="w-[220px]">
                               <SelectValue placeholder="Choisir un rôle" />
