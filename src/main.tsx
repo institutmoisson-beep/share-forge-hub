@@ -12,11 +12,22 @@ themeColorMeta.name = "theme-color";
 themeColorMeta.content = "#08101d";
 document.head.appendChild(themeColorMeta);
 
-if ("serviceWorker" in navigator) {
+// PWA Service Worker — only register in production, never in iframes/preview
+const isInIframe = (() => {
+  try { return window.self !== window.top; } catch { return true; }
+})();
+const isPreviewHost =
+  window.location.hostname.includes("id-preview--") ||
+  window.location.hostname.includes("lovableproject.com");
+
+if ("serviceWorker" in navigator && !isInIframe && !isPreviewHost) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      return undefined;
-    });
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  });
+} else if ("serviceWorker" in navigator && (isInIframe || isPreviewHost)) {
+  // Clean up any previously registered SW in preview
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((r) => r.unregister());
   });
 }
 
