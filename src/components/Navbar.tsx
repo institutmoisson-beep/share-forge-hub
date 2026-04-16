@@ -17,7 +17,9 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, profile, signOut, hasRole } = useAuth();
-  const isAdmin = hasRole("admin") || user?.email === "picelvus@gmail.com";
+  
+  // FIX: hasRole("admin") gère maintenant l'email spécial dans AuthContext
+  const isAdmin = hasRole("admin");
 
   const handleSignOut = async () => {
     await signOut();
