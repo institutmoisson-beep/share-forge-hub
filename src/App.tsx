@@ -8,7 +8,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import EntreprisesPage from "./pages/Entreprises.tsx";
 import CompanyDetail from "./pages/CompanyDetail.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
+import Dashboard from "./pages/Dashboards.tsx"; // ✅ CORRIGÉ: était "./pages/Dashboard.tsx"
 import Marketplace from "./pages/Marketplace.tsx";
 import LoginPage from "./pages/Login.tsx";
 import RegisterPage from "./pages/Register.tsx";
