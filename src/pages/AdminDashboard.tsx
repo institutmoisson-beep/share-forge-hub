@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
+import ImageUpload from "@/components/ImageUpload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -484,8 +485,14 @@ const AdminDashboard = () => {
                   />
                 </div>
 
-                <Input placeholder="URL du logo" value={companyForm.logo_url} onChange={(event) => setCompanyForm((prev) => ({ ...prev, logo_url: event.target.value }))} />
-                <Input placeholder="URL vidéo (optionnel)" value={companyForm.video_url} onChange={(event) => setCompanyForm((prev) => ({ ...prev, video_url: event.target.value }))} />
+                <ImageUpload
+                  value={companyForm.logo_url}
+                  onChange={(url) => setCompanyForm((prev) => ({ ...prev, logo_url: url }))}
+                  folder="logos"
+                  label="Logo de l'entreprise"
+                />
+
+                <Input placeholder="URL vidéo de présentation (optionnel)" value={companyForm.video_url} onChange={(event) => setCompanyForm((prev) => ({ ...prev, video_url: event.target.value }))} />
 
                 <div className="flex gap-3">
                   <Button className="flex-1" variant="gold" onClick={() => companyMutation.mutate()} disabled={companyMutation.isPending}>
