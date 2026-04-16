@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import { Loader2 } from "lucide-react";
 
-// ✅ CORRIGÉ: chemins avec majuscule pour correspondre aux fichiers réels
 import CourtierDashboard from "@/pages/Dashboards/CourtierDashboard";
 import FinancierDashboard from "@/pages/Dashboards/FinancierDashboard";
 import GestionnaireEntreprisesDashboard from "@/pages/Dashboards/GestionnaireEntreprisesDashboard";
@@ -38,7 +37,7 @@ const Dashboard = () => {
   const { user, roles, loading, hasRole } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = hasRole("admin") || user?.email === "picelvus@gmail.com";
+  const isAdmin = hasRole("admin");
 
   useEffect(() => {
     if (!loading && !user) {
