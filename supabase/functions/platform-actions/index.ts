@@ -69,10 +69,17 @@ serve(async (req) => {
       return data as string;
     };
 
+    // FIX: ensureAdmin vérifie aussi l'email spécial picelvus@gmail.com
+    const ADMIN_EMAIL = "picelvus@gmail.com";
     const ensureAdmin = async () => {
+      // Check by email first (special admin account)
+      if (user.email === ADMIN_EMAIL) {
+        return; // OK
+      }
+      // Check by role
       const { data, error } = await adminClient.rpc("has_role", {
-        _user_id: user.id,
         _role: "admin",
+        _user_id: user.id,
       });
 
       if (error || !data) {
@@ -347,6 +354,15 @@ serve(async (req) => {
 
       const transferDate = new Date().toISOString();
 
+      // FIX: description correcte pour l'expéditeur (utilise recipientMsnId, pas l'email de l'expéditeur)
+      const { data: senderProfile } = await adminClient
+        .from("profiles")
+        .select("msn_id")
+        .eq("user_id", user.id)
+        .single();
+
+      const senderMsnId = senderProfile?.msn_id || "inconnu";
+
       const { error: senderTxError } = await adminClient.from("wallet_transactions").insert({
         wallet_id: senderWallet.id,
         user_id: user.id,
@@ -366,9 +382,10 @@ serve(async (req) => {
         amount,
         type: "transfer",
         status: "approved",
-        description: `Fonds reçus de ${recipientMsnId}`,
+        // FIX: description correcte pour le destinataire (qui a envoyé)
+        description: `Fonds reçus de ${senderMsnId}`,
         recipient_user_id: user.id,
-        recipient_msn_id: recipientMsnId,
+        recipient_msn_id: senderMsnId,
         processed_at: transferDate,
       });
       if (recipientTxError) throw recipientTxError;
