@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import { Loader2 } from "lucide-react";
 
-import CourtierDashboard from "@/pages/dashboards/CourtierDashboard";
-import FinancierDashboard from "@/pages/dashboards/FinancierDashboard";
-import GestionnaireEntreprisesDashboard from "@/pages/dashboards/GestionnaireEntreprisesDashboard";
-import GenericRoleDashboard from "@/pages/dashboards/GenericRoleDashboard";
-import MemberDashboard from "@/pages/dashboards/MemberDashboard";
+// ✅ CORRIGÉ: chemins avec majuscule pour correspondre aux fichiers réels
+import CourtierDashboard from "@/pages/Dashboards/CourtierDashboard";
+import FinancierDashboard from "@/pages/Dashboards/FinancierDashboard";
+import GestionnaireEntreprisesDashboard from "@/pages/Dashboards/GestionnaireEntreprisesDashboard";
+import GenericRoleDashboard from "@/pages/Dashboards/GenericRoleDashboard";
+import MemberDashboard from "@/pages/Dashboards/MemberDashboard";
 
 const ROLE_PRIORITY = [
   "courtier",
