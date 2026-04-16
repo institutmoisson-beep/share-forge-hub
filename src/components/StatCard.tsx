@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Wallet, Briefcase, BarChart3, ArrowUpRight } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatCardProps {
   title: string;
