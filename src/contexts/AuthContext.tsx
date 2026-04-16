@@ -18,6 +18,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Email de l'admin spécial
+const ADMIN_EMAIL = "picelvus@gmail.com";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -26,20 +29,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [roles, setRoles] = useState<string[]>([]);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    setProfile(data);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      setProfile(data);
+    } catch (e) {
+      // Profil peut ne pas exister encore (trigger async)
+      console.warn("Profile fetch failed:", e);
+    }
   };
 
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setRoles(data?.map((r) => r.role) || []);
+  const fetchRoles = async (userId: string, userEmail?: string) => {
+    try {
+      // Si c'est l'email admin spécial, on lui attribue automatiquement le rôle admin
+      // même si la DB ne le contient pas encore
+      if (userEmail === ADMIN_EMAIL) {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const dbRoles = data?.map((r) => r.role) || [];
+        // S'assurer que admin est inclus
+        if (!dbRoles.includes("admin")) {
+          setRoles(["admin", ...dbRoles]);
+        } else {
+          setRoles(dbRoles);
+        }
+        return;
+      }
+      
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      setRoles(data?.map((r) => r.role) || []);
+    } catch (e) {
+      console.warn("Roles fetch failed:", e);
+      setRoles([]);
+    }
   };
 
   useEffect(() => {
@@ -48,9 +78,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          // Utiliser setTimeout pour éviter les deadlocks Supabase
           setTimeout(() => {
             fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
+            fetchRoles(session.user.id, session.user.email);
           }, 0);
         } else {
           setProfile(null);
@@ -65,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
+        fetchRoles(session.user.id, session.user.email);
       }
       setLoading(false);
     });
@@ -95,7 +126,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoles([]);
   };
 
-  const hasRole = (role: string) => roles.includes(role);
+  // FIX: hasRole vérifie aussi l'email admin spécial pour le rôle "admin"
+  const hasRole = (role: string) => {
+    if (role === "admin" && user?.email === ADMIN_EMAIL) return true;
+    return roles.includes(role);
+  };
+
   const refreshProfile = async () => {
     if (!user) return;
     await fetchProfile(user.id);
@@ -103,11 +139,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshRoles = async () => {
     if (!user) return;
-    await fetchRoles(user.id);
+    await fetchRoles(user.id, user.email);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, roles, signUp, signIn, signOut, hasRole, refreshProfile, refreshRoles }}>
+    <AuthContext.Provider value={{
+      user, session, loading, profile, roles,
+      signUp, signIn, signOut, hasRole,
+      refreshProfile, refreshRoles,
+    }}>
       {children}
     </AuthContext.Provider>
   );
