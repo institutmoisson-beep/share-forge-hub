@@ -209,6 +209,47 @@ export type Database = {
         }
         Relationships: []
       }
+      company_media: {
+        Row: {
+          caption: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          display_order: number
+          id: string
+          media_type: Database["public"]["Enums"]["company_media_type"]
+          media_url: string
+        }
+        Insert: {
+          caption?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          media_type?: Database["public"]["Enums"]["company_media_type"]
+          media_url: string
+        }
+        Update: {
+          caption?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          media_type?: Database["public"]["Enums"]["company_media_type"]
+          media_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_media_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       p2p_listings: {
         Row: {
           buyer_id: string | null
@@ -587,6 +628,7 @@ export type Database = {
         | "gestionnaire_entreprises"
         | "gestionnaire_achats"
         | "gestionnaire_utilisateurs"
+      company_media_type: "logo" | "banner" | "photo" | "video"
       listing_status: "active" | "sold" | "cancelled"
       transaction_status: "pending" | "approved" | "rejected"
       transaction_type:
@@ -736,6 +778,7 @@ export const Constants = {
         "gestionnaire_achats",
         "gestionnaire_utilisateurs",
       ],
+      company_media_type: ["logo", "banner", "photo", "video"],
       listing_status: ["active", "sold", "cancelled"],
       transaction_status: ["pending", "approved", "rejected"],
       transaction_type: [
