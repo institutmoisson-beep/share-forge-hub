@@ -976,10 +976,22 @@ const AdminDashboard = () => {
                 className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/25 focus:outline-none focus:border-amber-500/30"/>
             ))}
             <div className="col-span-2">
-              <ImageUpload value={companyForm.logo_url} onChange={url=>setCompanyForm(p=>({...p,logo_url:url}))} folder="logos" label="Logo de l'entreprise"/>
+              <ImageUpload value={companyForm.logo_url} onChange={url=>setCompanyForm(p=>({...p,logo_url:url}))} folder="logos" label="Logo principal de l'entreprise"/>
             </div>
-            <input placeholder="URL vidéo de présentation" value={companyForm.video_url} onChange={e=>setCompanyForm(p=>({...p,video_url:e.target.value}))}
+            <input placeholder="URL vidéo de présentation (YouTube, Vimeo...)" value={companyForm.video_url} onChange={e=>setCompanyForm(p=>({...p,video_url:e.target.value}))}
               className="col-span-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/25 focus:outline-none focus:border-amber-500/30"/>
+
+            {editingCompanyId ? (
+              <div className="col-span-2 mt-2">
+                <CompanyMediaManager companyId={editingCompanyId} />
+              </div>
+            ) : (
+              <div className="col-span-2 mt-2 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+                <p className="text-xs font-mono text-amber-400/80">
+                  💡 Créez d'abord l'entreprise. Vous pourrez ensuite l'éditer pour ajouter des bannières, photos et vidéos additionnelles.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <button onClick={()=>setShowCompanyForm(false)} className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-xs font-mono hover:border-white/20 transition-all">ANNULER</button>
