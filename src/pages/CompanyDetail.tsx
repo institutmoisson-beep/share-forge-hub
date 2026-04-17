@@ -1,18 +1,18 @@
 import Navbar from "@/components/Navbar";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, MapPin, FileText, TrendingUp, TrendingDown, ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Building2, MapPin, FileText, TrendingUp, TrendingDown, ArrowLeft, ShoppingCart, Minus, Plus, Image as ImageIcon, Film, Users, Tag } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { invokePlatformAction } from "@/lib/platform-actions";
 
 const CompanyDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -27,10 +27,36 @@ const CompanyDetail = () => {
     enabled: !!id,
   });
 
+  const { data: mediaItems = [] } = useQuery({
+    queryKey: ["company-media-public", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_media")
+        .select("*")
+        .eq("company_id", id!)
+        .order("display_order", { ascending: true });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const { data: p2pListings = [] } = useQuery({
+    queryKey: ["company-p2p", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("p2p_listings")
+        .select("*")
+        .eq("company_id", id!)
+        .eq("status", "active")
+        .order("price_per_share", { ascending: true });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   const buyMutation = useMutation({
     mutationFn: async () => invokePlatformAction<{ orderNumber: string }>("purchase_company_shares", {
-      companyId: id,
-      quantity,
+      companyId: id, quantity,
     }),
     onSuccess: async (response) => {
       toast.success(`Achat confirmé. Référence: ${response.orderNumber}`);
@@ -39,6 +65,20 @@ const CompanyDetail = () => {
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
         queryClient.invalidateQueries({ queryKey: ["user_shares"] }),
         queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+      ]);
+      navigate("/dashboard");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const buyP2PMutation = useMutation({
+    mutationFn: async (listingId: string) => invokePlatformAction<{ orderNumber: string }>("purchase_listing", { listingId }),
+    onSuccess: async (response) => {
+      toast.success(`Titre acquis. Référence: ${response.orderNumber}`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company-p2p", id] }),
+        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
+        queryClient.invalidateQueries({ queryKey: ["user_shares"] }),
       ]);
       navigate("/dashboard");
     },
@@ -74,36 +114,44 @@ const CompanyDetail = () => {
   const priceChangePercent = previousPrice > 0 ? ((priceChange / previousPrice) * 100).toFixed(2) : "0";
   const isPositive = priceChange >= 0;
   const totalCost = quantity * pricePerShare;
-  const soldPercent = company.total_shares > 0 
-    ? ((company.total_shares - company.available_shares) / company.total_shares * 100).toFixed(1) 
+  const soldPercent = company.total_shares > 0
+    ? ((company.total_shares - company.available_shares) / company.total_shares * 100).toFixed(1)
     : "0";
 
+  // Build gallery: banner first, then photos
+  const banners = mediaItems.filter((m) => m.media_type === "banner");
+  const photos = mediaItems.filter((m) => m.media_type === "photo");
+  const videos = mediaItems.filter((m) => m.media_type === "video");
+  const heroBanner = banners[0]?.media_url || null;
+
   const handleBuy = () => {
-    if (!user) {
-      toast.error("Connectez-vous pour acheter des titres.");
-      navigate("/login");
-      return;
-    }
-
-    if (company.available_shares <= 0) {
-      toast.error("Cette entreprise n'a plus de titres disponibles.");
-      return;
-    }
-
+    if (!user) { toast.error("Connectez-vous pour acheter."); navigate("/login"); return; }
+    if (company.available_shares <= 0) { toast.error("Plus de titres disponibles."); return; }
     buyMutation.mutate();
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-24 pb-12 container mx-auto px-4">
-        <Link to="/entreprises" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux entreprises
+
+      {/* HERO BANNER */}
+      {heroBanner && (
+        <div className="pt-16 relative">
+          <div className="h-48 md:h-64 w-full overflow-hidden">
+            <img src={heroBanner} alt={company.name} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          </div>
+        </div>
+      )}
+
+      <div className={`${heroBanner ? "" : "pt-24"} pb-12 container mx-auto px-4`}>
+        <Link to="/entreprises" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 mt-6 transition-colors">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux entreprises
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            {/* HEADER */}
             <div className="glass-card p-8">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-20 h-20 rounded-2xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
@@ -122,19 +170,20 @@ const CompanyDetail = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-muted-foreground leading-relaxed">{company.description}</p>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{company.description}</p>
               <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4" />
                 Registre de Commerce: <span className="text-foreground font-mono">{company.registre_commerce}</span>
               </div>
             </div>
 
+            {/* STATS */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Prix / Action", value: `${pricePerShare.toLocaleString()} FCFA`, highlight: true },
-                { label: "Total Actions", value: company.total_shares.toLocaleString() },
+                { label: "Prix / Titre", value: `${pricePerShare.toLocaleString()} FCFA`, highlight: true },
+                { label: "Total Titres", value: company.total_shares.toLocaleString() },
                 { label: "Disponibles", value: company.available_shares.toLocaleString() },
-                { label: "Vendues", value: `${soldPercent}%` },
+                { label: "Vendus", value: `${soldPercent}%` },
               ].map((s, i) => (
                 <div key={i} className="glass-card p-4">
                   <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -143,6 +192,92 @@ const CompanyDetail = () => {
               ))}
             </div>
 
+            {/* GALLERY */}
+            {(photos.length > 0 || banners.length > 0) && (
+              <div className="glass-card p-6">
+                <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-primary" /> Galerie ({photos.length + banners.length})
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[...banners, ...photos].map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setActiveImage(m.media_url)}
+                      className="aspect-square rounded-xl overflow-hidden bg-secondary border border-border hover:border-primary/40 transition-all group"
+                    >
+                      <img
+                        src={m.media_url}
+                        alt={m.caption || company.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIDEOS */}
+            {(videos.length > 0 || company.video_url) && (
+              <div className="glass-card p-6">
+                <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Film className="h-5 w-5 text-primary" /> Vidéos
+                </h3>
+                <div className="space-y-3">
+                  {company.video_url && (
+                    <a
+                      href={company.video_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block p-3 rounded-lg bg-secondary border border-border hover:border-primary/40 transition-all text-sm text-foreground"
+                    >
+                      ▶ Vidéo officielle de présentation
+                    </a>
+                  )}
+                  {videos.map((v) => (
+                    <a
+                      key={v.id}
+                      href={v.media_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block p-3 rounded-lg bg-secondary border border-border hover:border-primary/40 transition-all text-sm text-foreground"
+                    >
+                      ▶ {v.caption || "Vidéo de présentation"}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* P2P LISTINGS */}
+            {p2pListings.length > 0 && (
+              <div className="glass-card p-6">
+                <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-primary" />
+                  Titres en revente ({p2pListings.length})
+                </h3>
+                <div className="space-y-2">
+                  {p2pListings.slice(0, 5).map((l) => (
+                    <div key={l.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary border border-border">
+                      <div>
+                        <p className="text-sm text-foreground font-semibold">{l.quantity} titre(s)</p>
+                        <p className="text-xs text-muted-foreground">{Number(l.price_per_share).toLocaleString()} FCFA / titre</p>
+                      </div>
+                      <Button
+                        variant="gold"
+                        size="sm"
+                        disabled={l.seller_id === user?.id || buyP2PMutation.isPending}
+                        onClick={() => buyP2PMutation.mutate(l.id)}
+                      >
+                        {l.seller_id === user?.id ? "Votre annonce" : "Acheter"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PRICE EVOLUTION */}
             <div className="glass-card p-6">
               <h3 className="font-heading font-semibold text-foreground mb-4">Évolution du prix</h3>
               <div className="flex items-center gap-4 flex-wrap">
@@ -166,11 +301,12 @@ const CompanyDetail = () => {
             </div>
           </div>
 
+          {/* SIDEBAR — BUY */}
           <div className="space-y-6">
-            <div className="glass-card p-6 border-primary/20 animate-pulse-gold">
-              <h3 className="font-heading font-semibold text-lg text-foreground mb-6">Acheter des actions</h3>
+            <div className="glass-card p-6 border-primary/20 sticky top-24">
+              <h3 className="font-heading font-semibold text-lg text-foreground mb-6">Acquérir des titres</h3>
               <div className="mb-6">
-                <label className="text-sm text-muted-foreground mb-2 block">Nombre d'actions</label>
+                <label className="text-sm text-muted-foreground mb-2 block">Nombre de titres</label>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-foreground hover:bg-secondary/80 transition-colors">
@@ -201,17 +337,27 @@ const CompanyDetail = () => {
                 </div>
               </div>
 
-               <Button variant="gold" size="lg" className="w-full" onClick={handleBuy} disabled={buyMutation.isPending || company.available_shares <= 0}>
+              <Button variant="gold" size="lg" className="w-full" onClick={handleBuy} disabled={buyMutation.isPending || company.available_shares <= 0}>
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                 {buyMutation.isPending ? "Traitement..." : company.available_shares <= 0 ? "Indisponible" : "Acheter maintenant"}
+                {buyMutation.isPending ? "Traitement..." : company.available_shares <= 0 ? "Indisponible" : "Acquérir maintenant"}
               </Button>
               <p className="text-xs text-muted-foreground text-center mt-3">
-                 L'achat débite le portefeuille et génère une référence unique liée au titre.
+                Débit du portefeuille avec génération d'une référence unique liée au titre.
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* LIGHTBOX */}
+      {activeImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setActiveImage(null)}
+        >
+          <img src={activeImage} alt="" className="max-h-full max-w-full object-contain rounded-lg" />
+        </div>
+      )}
     </div>
   );
 };
