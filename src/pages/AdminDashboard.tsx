@@ -18,6 +18,7 @@ import {
 
 import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
+import CompanyMediaManager from "@/components/CompanyMediaManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
