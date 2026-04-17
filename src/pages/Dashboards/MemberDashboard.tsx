@@ -236,7 +236,9 @@ const MemberDashboard = () => {
     mutationFn: async () => {
       if (!amount || Number(amount) <= 0) throw new Error("Montant invalide.");
       if (Number(amount) > balance) throw new Error("Solde insuffisant.");
-      
+      if (!selectedService) throw new Error("Sélectionnez un moyen de paiement.");
+      if (!paymentContact) throw new Error("Indiquez votre contact / lien / email de réception.");
+
       let walletId = wallet?.id;
       if (!walletId) {
         const { data: w } = await supabase
@@ -248,22 +250,26 @@ const MemberDashboard = () => {
       }
       if (!walletId) throw new Error("Portefeuille introuvable.");
 
+      const serviceName = paymentServices.find((s: any) => s.id === selectedService)?.name || "service";
+
       const { error } = await supabase.from("wallet_transactions").insert({
         user_id: user!.id,
         wallet_id: walletId,
         type: "withdrawal",
         amount: Number(amount),
         status: "pending",
-        payment_contact: paymentContact || null,
-        description: `Retrait vers ${paymentContact || "compte"}`,
+        payment_service_id: selectedService,
+        payment_contact: paymentContact,
+        description: `Retrait via ${serviceName} → ${paymentContact}`,
       });
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Demande de retrait soumise. En attente de validation.");
+      toast.success("Demande de retrait soumise. Le montant sera débité après validation admin.");
       setWithdrawDialog(false);
       setAmount("");
       setPaymentContact("");
+      setSelectedService("");
       await queryClient.invalidateQueries({ queryKey: ["transactions", user?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
