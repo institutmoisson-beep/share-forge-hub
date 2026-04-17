@@ -774,9 +774,27 @@ const MemberDashboard = () => {
         <DialogContent style={{ background: "#0a0f1e", border: "1px solid rgba(244,63,94,0.2)" }}>
           <DialogHeader>
             <DialogTitle className="font-mono text-rose-400 tracking-wider">DEMANDE DE RETRAIT</DialogTitle>
-            <DialogDescription className="font-mono text-white/30 text-xs">Solde disponible : {fmtCurrency(balance)}</DialogDescription>
+            <DialogDescription className="font-mono text-white/30 text-xs">
+              Solde disponible : {fmtCurrency(balance)} · Montant débité après validation admin.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <div>
+              <label className="font-mono text-[10px] text-white/30 block mb-1.5">MOYEN DE PAIEMENT *</label>
+              <select
+                value={selectedService}
+                onChange={e => setSelectedService(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono focus:outline-none focus:border-rose-500/30"
+              >
+                <option value="">— Sélectionner —</option>
+                {paymentServices.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              {selectedService && (paymentServices.find((s: any) => s.id === selectedService) as any)?.instructions && (
+                <p className="font-mono text-[10px] text-amber-400/60 mt-1.5">
+                  ℹ {(paymentServices.find((s: any) => s.id === selectedService) as any)?.instructions}
+                </p>
+              )}
+            </div>
             <div>
               <label className="font-mono text-[10px] text-white/30 block mb-1.5">MONTANT (FCFA) *</label>
               <input
@@ -789,13 +807,14 @@ const MemberDashboard = () => {
               {amount && Number(amount) > balance && <p className="font-mono text-[10px] text-rose-400 mt-1">⚠ Solde insuffisant</p>}
             </div>
             <div>
-              <label className="font-mono text-[10px] text-white/30 block mb-1.5">COMPTE DESTINATAIRE *</label>
+              <label className="font-mono text-[10px] text-white/30 block mb-1.5">LIEN / CONTACT / EMAIL DE RÉCEPTION *</label>
               <input
-                placeholder="N° téléphone ou compte"
+                placeholder="Ex: +237 6XX XXX XXX, email ou lien de paiement"
                 value={paymentContact}
                 onChange={e => setPaymentContact(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-rose-500/30"
               />
+              <p className="font-mono text-[10px] text-white/30 mt-1">Précisez où vous souhaitez recevoir vos fonds.</p>
             </div>
           </div>
           <DialogFooter>
