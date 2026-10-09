@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       broker_commissions: {
         Row: {
           commission_rate: number
@@ -146,6 +176,126 @@ export type Database = {
           },
         ]
       }
+      certificate_secrets: {
+        Row: {
+          id: number
+          secret: string
+        }
+        Insert: {
+          id: number
+          secret: string
+        }
+        Update: {
+          id?: number
+          secret?: string
+        }
+        Relationships: []
+      }
+      certificate_transfers: {
+        Row: {
+          company_id: string
+          created_at: string
+          from_certificate_id: string | null
+          from_user_id: string | null
+          id: string
+          previous_hash: string | null
+          price_fcfa: number
+          quantity: number
+          record_hash: string
+          to_certificate_id: string | null
+          to_user_id: string | null
+          transfer_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          from_certificate_id?: string | null
+          from_user_id?: string | null
+          id?: string
+          previous_hash?: string | null
+          price_fcfa?: number
+          quantity: number
+          record_hash: string
+          to_certificate_id?: string | null
+          to_user_id?: string | null
+          transfer_type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          from_certificate_id?: string | null
+          from_user_id?: string | null
+          id?: string
+          previous_hash?: string | null
+          price_fcfa?: number
+          quantity?: number
+          record_hash?: string
+          to_certificate_id?: string | null
+          to_user_id?: string | null
+          transfer_type?: string
+        }
+        Relationships: []
+      }
+      certificates: {
+        Row: {
+          company_id: string
+          current_owner_id: string
+          id: string
+          issued_at: string
+          parent_certificate_id: string | null
+          public_code: string
+          qr_secret_hash: string
+          quantity: number
+          status: string
+          superseded_at: string | null
+          user_share_id: string | null
+          version: number
+        }
+        Insert: {
+          company_id: string
+          current_owner_id: string
+          id?: string
+          issued_at?: string
+          parent_certificate_id?: string | null
+          public_code: string
+          qr_secret_hash: string
+          quantity: number
+          status?: string
+          superseded_at?: string | null
+          user_share_id?: string | null
+          version?: number
+        }
+        Update: {
+          company_id?: string
+          current_owner_id?: string
+          id?: string
+          issued_at?: string
+          parent_certificate_id?: string | null
+          public_code?: string
+          qr_secret_hash?: string
+          quantity?: number
+          status?: string
+          superseded_at?: string | null
+          user_share_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_parent_certificate_id_fkey"
+            columns: ["parent_certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           available_shares: number
@@ -156,14 +306,17 @@ export type Database = {
           description: string
           id: string
           is_active: boolean
+          is_frozen: boolean
           location: string
           logo_url: string | null
           name: string
           previous_price: number
           price_per_share: number
           registre_commerce: string
+          requires_issuer_approval: boolean
           sector: string
           total_shares: number
+          transfer_rules: string | null
           updated_at: string
           video_url: string | null
         }
@@ -176,14 +329,17 @@ export type Database = {
           description?: string
           id?: string
           is_active?: boolean
+          is_frozen?: boolean
           location?: string
           logo_url?: string | null
           name: string
           previous_price?: number
           price_per_share?: number
           registre_commerce: string
+          requires_issuer_approval?: boolean
           sector: string
           total_shares?: number
+          transfer_rules?: string | null
           updated_at?: string
           video_url?: string | null
         }
@@ -196,14 +352,17 @@ export type Database = {
           description?: string
           id?: string
           is_active?: boolean
+          is_frozen?: boolean
           location?: string
           logo_url?: string | null
           name?: string
           previous_price?: number
           price_per_share?: number
           registre_commerce?: string
+          requires_issuer_approval?: boolean
           sector?: string
           total_shares?: number
+          transfer_rules?: string | null
           updated_at?: string
           video_url?: string | null
         }
@@ -346,34 +505,46 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          city: string | null
           created_at: string
           first_name: string
           id: string
+          is_frozen: boolean
+          kyc_status: string
           last_name: string
           msn_id: string
           phone: string | null
+          risk_ack_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           first_name?: string
           id?: string
+          is_frozen?: boolean
+          kyc_status?: string
           last_name?: string
           msn_id: string
           phone?: string | null
+          risk_ack_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           first_name?: string
           id?: string
+          is_frozen?: boolean
+          kyc_status?: string
           last_name?: string
           msn_id?: string
           phone?: string | null
+          risk_ack_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -605,8 +776,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cert_token: { Args: { _cert_id: string }; Returns: string }
+      compute_transfer_hash: {
+        Args: {
+          _at: string
+          _from: string
+          _prev: string
+          _price: number
+          _qty: number
+          _to: string
+        }
+        Returns: string
+      }
+      generate_cert_code: { Args: never; Returns: string }
       generate_msn_id: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
+      get_company_transfer_history: {
+        Args: { _company_id: string }
+        Returns: {
+          created_at: string
+          from_label: string
+          price_fcfa: number
+          quantity: number
+          record_hash: string
+          to_label: string
+          transfer_type: string
+        }[]
+      }
+      get_my_certificate_token: { Args: { _cert_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -614,6 +811,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      issue_certificate: {
+        Args: {
+          _company: string
+          _from_user: string
+          _owner: string
+          _parent: string
+          _price: number
+          _qty: number
+          _share: string
+          _type: string
+        }
+        Returns: string
+      }
+      verify_certificate: { Args: { _token: string }; Returns: Json }
+      verify_chain: { Args: { _company_id: string }; Returns: Json }
     }
     Enums: {
       app_role:
