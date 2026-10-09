@@ -13,6 +13,8 @@ import {
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 import Navbar from "@/components/Navbar";
+import MyCertificates from "@/components/MyCertificates";
+import RegistryDisclaimer from "@/components/RegistryDisclaimer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokePlatformAction } from "@/lib/platform-actions";
@@ -330,7 +332,7 @@ const MemberDashboard = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-xs text-amber-400/60 tracking-widest mb-1">ESPACE INVESTISSEUR</p>
+              <p className="font-mono text-xs text-amber-400/60 tracking-widest mb-1">ESPACE PARTICIPANT</p>
               <h1 className="font-mono font-bold text-xl text-white">
                 {profile?.first_name || "Membre"} {profile?.last_name || ""}
               </h1>
@@ -951,6 +953,8 @@ const MemberDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MyCertificates />
+      <RegistryDisclaimer />
     </div>
   );
 };
