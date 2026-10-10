@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import Navbar from "@/components/Navbar";
 import MyCertificates from "@/components/MyCertificates";
+import ComplianceCard from "@/components/ComplianceCard";
 import RegistryDisclaimer from "@/components/RegistryDisclaimer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -326,6 +327,8 @@ const MemberDashboard = () => {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg,#030711 0%,#050d1a 50%,#030711 100%)" }}>
       <Navbar />
+      <div className="pt-16" />
+      <ComplianceCard />
 
       {/* Header */}
       <div className="pt-20 pb-4 border-b border-white/5">

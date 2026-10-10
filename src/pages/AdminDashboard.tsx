@@ -29,6 +29,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import KycReview from "@/components/KycReview";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -563,6 +564,7 @@ const AdminDashboard = () => {
                 {value:"users",label:"MEMBRES",Icon:Users},
                 {value:"shares",label:"TITRES",Icon:Coins},
                 {value:"payments",label:"PAIEMENTS",Icon:CreditCard},
+                {value:"kyc",label:"KYC",Icon:Users},
               ].map(({value,label,Icon,badge})=>(
                 <TabsTrigger key={value} value={value}
                   className="text-[10px] font-mono px-4 py-2 rounded-lg tracking-widest data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 text-white/30 hover:text-white/60">
@@ -575,6 +577,8 @@ const AdminDashboard = () => {
               ))}
             </TabsList>
           </div>
+
+          <TabsContent value="kyc" className="mt-4"><KycReview /></TabsContent>
 
           {/* ── TRANSACTIONS ── */}
           <TabsContent value="transactions" className="mt-4">
