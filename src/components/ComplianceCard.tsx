@@ -54,7 +54,7 @@ const ComplianceCard = () => {
   };
 
   return (
-    <section className="container mx-auto px-4 pt-6">
+    <section className="container mx-auto px-4 pt-20 -mb-14 relative z-10">
       <div className="glass-card p-5 space-y-5 border border-primary/30">
         {profile.is_frozen && (
           <p className="flex items-center gap-2 text-destructive text-sm"><ShieldAlert className="h-4 w-4" />Votre compte est gelé : achats et ventes suspendus. Contactez l'administration.</p>

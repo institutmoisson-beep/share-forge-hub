@@ -327,7 +327,6 @@ const MemberDashboard = () => {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg,#030711 0%,#050d1a 50%,#030711 100%)" }}>
       <Navbar />
-      <div className="pt-16" />
       <ComplianceCard />
 
       {/* Header */}
