@@ -8,6 +8,13 @@
       "when": 1791545126148,
       "tag": "0000_certificates_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791591713936,
+      "tag": "0001_kyc_and_risk",
+      "breakpoints": true
     }
   ]
 }

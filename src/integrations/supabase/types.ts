@@ -409,6 +409,45 @@ export type Database = {
           },
         ]
       }
+      kyc_documents: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          doc_type: string
+          file_path: string
+          id: string
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          doc_type: string
+          file_path: string
+          id?: string
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          doc_type?: string
+          file_path?: string
+          id?: string
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       p2p_listings: {
         Row: {
           buyer_id: string | null
@@ -510,6 +549,7 @@ export type Database = {
           first_name: string
           id: string
           is_frozen: boolean
+          kyc_note: string | null
           kyc_status: string
           last_name: string
           msn_id: string
@@ -525,6 +565,7 @@ export type Database = {
           first_name?: string
           id?: string
           is_frozen?: boolean
+          kyc_note?: string | null
           kyc_status?: string
           last_name?: string
           msn_id: string
@@ -540,6 +581,7 @@ export type Database = {
           first_name?: string
           id?: string
           is_frozen?: boolean
+          kyc_note?: string | null
           kyc_status?: string
           last_name?: string
           msn_id?: string
@@ -776,6 +818,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_risk_warning: { Args: never; Returns: string }
+      admin_review_kyc: {
+        Args: { _approve: boolean; _note: string; _user_id: string }
+        Returns: undefined
+      }
+      assert_can_trade: { Args: { _user: string }; Returns: undefined }
       cert_token: { Args: { _cert_id: string }; Returns: string }
       compute_transfer_hash: {
         Args: {
@@ -824,6 +872,7 @@ export type Database = {
         }
         Returns: string
       }
+      submit_kyc: { Args: never; Returns: undefined }
       verify_certificate: { Args: { _token: string }; Returns: Json }
       verify_chain: { Args: { _company_id: string }; Returns: Json }
     }
