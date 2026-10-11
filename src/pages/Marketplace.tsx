@@ -27,6 +27,7 @@ const Marketplace = () => {
         .from("p2p_listings")
         .select("*, companies(name, price_per_share)")
         .eq("status", "active")
+        .in("issuer_approval", ["not_required", "approved"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = data || [];
