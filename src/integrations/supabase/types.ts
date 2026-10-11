@@ -409,6 +409,38 @@ export type Database = {
           },
         ]
       }
+      company_members: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kyc_documents: {
         Row: {
           admin_note: string | null
@@ -454,6 +486,8 @@ export type Database = {
           company_id: string
           created_at: string
           id: string
+          issuer_approval: string
+          issuer_note: string | null
           price_per_share: number
           quantity: number
           seller_id: string
@@ -467,6 +501,8 @@ export type Database = {
           company_id: string
           created_at?: string
           id?: string
+          issuer_approval?: string
+          issuer_note?: string | null
           price_per_share: number
           quantity: number
           seller_id: string
@@ -480,6 +516,8 @@ export type Database = {
           company_id?: string
           created_at?: string
           id?: string
+          issuer_approval?: string
+          issuer_note?: string | null
           price_per_share?: number
           quantity?: number
           seller_id?: string
@@ -823,6 +861,10 @@ export type Database = {
         Args: { _approve: boolean; _note: string; _user_id: string }
         Returns: undefined
       }
+      admin_set_issuer_member: {
+        Args: { _add: boolean; _company: string; _msn_id: string }
+        Returns: undefined
+      }
       assert_can_trade: { Args: { _user: string }; Returns: undefined }
       cert_token: { Args: { _cert_id: string }; Returns: string }
       compute_transfer_hash: {
@@ -839,6 +881,14 @@ export type Database = {
       generate_cert_code: { Args: never; Returns: string }
       generate_msn_id: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
+      get_company_members: {
+        Args: { _company: string }
+        Returns: {
+          first_name: string
+          last_name: string
+          msn_id: string
+        }[]
+      }
       get_company_transfer_history: {
         Args: { _company_id: string }
         Returns: {
@@ -851,12 +901,39 @@ export type Database = {
           transfer_type: string
         }[]
       }
+      get_issuer_pending_listings: {
+        Args: { _company: string }
+        Returns: {
+          created_at: string
+          id: string
+          price_per_share: number
+          quantity: number
+          seller_msn: string
+        }[]
+      }
+      get_issuer_register: {
+        Args: { _company: string }
+        Returns: {
+          holder_name: string
+          issued_at: string
+          msn_id: string
+          phone: string
+          public_code: string
+          quantity: number
+          status: string
+          version: number
+        }[]
+      }
       get_my_certificate_token: { Args: { _cert_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_issuer_of: {
+        Args: { _company: string; _user: string }
         Returns: boolean
       }
       issue_certificate: {
@@ -871,6 +948,14 @@ export type Database = {
           _type: string
         }
         Returns: string
+      }
+      issuer_review_listing: {
+        Args: { _approve: boolean; _listing: string; _note: string }
+        Returns: undefined
+      }
+      issuer_update_rules: {
+        Args: { _company: string; _requires: boolean; _rules: string }
+        Returns: undefined
       }
       submit_kyc: { Args: never; Returns: undefined }
       verify_certificate: { Args: { _token: string }; Returns: Json }

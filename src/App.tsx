@@ -14,6 +14,7 @@ import LoginPage from "./pages/Login.tsx";
 import RegisterPage from "./pages/Register.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Verify from "./pages/Verify.tsx";
+import Issuer from "./pages/Issuer.tsx";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/verify/:token" element={<Verify />} />
+            <Route path="/emetteur" element={<Issuer />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, User, Briefcase, BarChart3, ShoppingCart, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Accueil", path: "/" },
@@ -20,6 +22,15 @@ const Navbar = () => {
   
   // FIX: hasRole("admin") gère maintenant l'email spécial dans AuthContext
   const isAdmin = hasRole("admin");
+  const { data: isIssuer = false } = useQuery({
+    queryKey: ["is-issuer", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { count } = await supabase.from("company_members").select("id", { count: "exact", head: true }).eq("user_id", user!.id);
+      return (count || 0) > 0;
+    },
+  });
+  const showIssuer = isAdmin || isIssuer;
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,6 +76,14 @@ const Navbar = () => {
                   {profile?.first_name || "Mon compte"}
                 </Button>
               </Link>
+              {showIssuer && (
+                <Link to="/emetteur">
+                  <Button variant="outline" size="sm">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Émetteur
+                  </Button>
+                </Link>
+              )}
               {isAdmin && (
                 <Link to="/admin">
                   <Button variant="outline" size="sm">
@@ -114,6 +133,14 @@ const Navbar = () => {
             <div className="flex gap-2 mt-2 pt-2 border-t border-border">
               {user ? (
                 <div className="grid w-full gap-2">
+                  {showIssuer && (
+                    <Link to="/emetteur" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" className="w-full" size="sm">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        Espace émetteur
+                      </Button>
+                    </Link>
+                  )}
                   {isAdmin && (
                     <Link to="/admin" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" className="w-full" size="sm">
