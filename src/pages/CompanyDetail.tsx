@@ -48,6 +48,7 @@ const CompanyDetail = () => {
         .select("*")
         .eq("company_id", id!)
         .eq("status", "active")
+        .in("issuer_approval", ["not_required", "approved"])
         .order("price_per_share", { ascending: true });
       return data || [];
     },
