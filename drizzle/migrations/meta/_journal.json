@@ -15,6 +15,13 @@
       "when": 1791591713936,
       "tag": "0001_kyc_and_risk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791757381612,
+      "tag": "0002_issuer_space",
+      "breakpoints": true
     }
   ]
 }
