@@ -579,6 +579,30 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          id: number
+          max_30d_amount: number
+          max_tx_amount: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id: number
+          max_30d_amount?: number
+          max_tx_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          max_30d_amount?: number
+          max_tx_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -857,12 +881,36 @@ export type Database = {
     }
     Functions: {
       accept_risk_warning: { Args: never; Returns: string }
+      admin_audit_log: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor: string
+          created_at: string
+          details: Json
+          entity: string
+          entity_id: string
+        }[]
+      }
       admin_review_kyc: {
         Args: { _approve: boolean; _note: string; _user_id: string }
         Returns: undefined
       }
+      admin_set_frozen: {
+        Args: {
+          _entity: string
+          _frozen: boolean
+          _id: string
+          _reason: string
+        }
+        Returns: undefined
+      }
       admin_set_issuer_member: {
         Args: { _add: boolean; _company: string; _msn_id: string }
+        Returns: undefined
+      }
+      admin_update_limits: {
+        Args: { _max_30d: number; _max_tx: number }
         Returns: undefined
       }
       assert_can_trade: { Args: { _user: string }; Returns: undefined }
