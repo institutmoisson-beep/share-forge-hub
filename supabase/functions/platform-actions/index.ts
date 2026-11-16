@@ -159,79 +159,30 @@ serve(async (req) => {
     }
 
     if (body.action === "create_listing") {
-      const userShareId = String(body.userShareId || "");
-      const quantity = Number(body.quantity || 0);
-      const pricePerShare = Number(body.pricePerShare || 0);
-
-      if (!userShareId || quantity <= 0 || pricePerShare <= 0) {
-        return json({ error: "Paramètres de mise en vente invalides." }, 400);
+      const unitIds = Array.isArray(body.unitIds) ? body.unitIds.map(String).slice(0, 1000) : [];
+      const pricePerShare = Number(body.pricePerShare ?? 0);
+      const mode = body.paymentMode === "external" ? "external" : "wallet";
+      const targetMsn = typeof body.targetMsn === "string" ? body.targetMsn.slice(0, 30) : "";
+      if (unitIds.length === 0 || !Number.isFinite(pricePerShare)) {
+        return json({ error: "Sélectionnez les titres et indiquez un prix." }, 400);
       }
-
-      const { data: share, error: shareError } = await adminClient
-        .from("user_shares")
-        .select("*")
-        .eq("id", userShareId)
-        .eq("user_id", user.id)
-        .single();
-
-      if (shareError || !share) {
-        return json({ error: "Titre introuvable." }, 404);
-      }
-
-      const { data: existingListings } = await adminClient
-        .from("p2p_listings")
-        .select("quantity")
-        .eq("user_share_id", userShareId)
-        .eq("seller_id", user.id)
-        .eq("status", "active");
-
-      const reservedQuantity = (existingListings || []).reduce((sum, listing) => sum + Number(listing.quantity || 0), 0);
-
-      if (quantity > Number(share.quantity) - reservedQuantity) {
-        return json({ error: "Vous n'avez pas assez de titres disponibles pour cette annonce." }, 400);
-      }
-
-      const { error } = await adminClient.from("p2p_listings").insert({
-        company_id: share.company_id,
-        user_share_id: share.id,
-        seller_id: user.id,
-        quantity,
-        price_per_share: pricePerShare,
+      const { data, error } = await adminClient.rpc("create_unit_listing", {
+        _seller: user.id, _unit_ids: unitIds, _price: pricePerShare, _target_msn: targetMsn, _mode: mode,
       });
-
-      if (error) throw error;
-
-      return json({ success: true, message: "Annonce publiée sur le marché secondaire." });
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true, listingId: data });
     }
 
     if (body.action === "purchase_listing") {
       const listingId = String(body.listingId || "");
-      if (!listingId) {
-        return json({ error: "Annonce invalide." }, 400);
-      }
-
-      const { data: listing, error: listingError } = await adminClient
-        .from("p2p_listings")
-        .select("*")
-        .eq("id", listingId)
-        .eq("status", "active")
-        .single();
-
-      if (listingError || !listing) {
-        return json({ error: "Annonce introuvable ou déjà traitée." }, 404);
-      }
-
-      if (listing.seller_id === user.id) {
-        return json({ error: "Vous ne pouvez pas acheter votre propre annonce." }, 400);
-      }
-
-      const buyerOrderNumber = await generateOrderNumber();
-      const { error: rpcError } = await adminClient.rpc("purchase_listing_atomic", {
-        _listing: listing.id, _buyer: user.id, _order: buyerOrderNumber,
+      const unitIds = Array.isArray(body.unitIds) ? body.unitIds.map(String).slice(0, 1000) : [];
+      if (!listingId || unitIds.length === 0) return json({ error: "Sélectionnez au moins un titre." }, 400);
+      const orderNumber = await generateOrderNumber();
+      const { data, error } = await adminClient.rpc("buy_listing_units", {
+        _listing: listingId, _buyer: user.id, _unit_ids: unitIds, _order: orderNumber,
       });
-      if (rpcError) return json({ error: rpcError.message }, 400);
-
-      return json({ success: true, message: "Achat P2P confirmé.", orderNumber: buyerOrderNumber });
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true, orderNumber, ...(data as Record<string, unknown>) });
     }
 
     if (body.action === "transfer_money") {
