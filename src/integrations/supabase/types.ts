@@ -480,6 +480,39 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_units: {
+        Row: {
+          listing_id: string
+          sold: boolean
+          unit_id: string
+        }
+        Insert: {
+          listing_id: string
+          sold?: boolean
+          unit_id: string
+        }
+        Update: {
+          listing_id?: string
+          sold?: boolean
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_units_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "p2p_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_units_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "share_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       p2p_listings: {
         Row: {
           buyer_id: string | null
@@ -488,11 +521,13 @@ export type Database = {
           id: string
           issuer_approval: string
           issuer_note: string | null
+          payment_mode: string
           price_per_share: number
           quantity: number
           seller_id: string
           sold_at: string | null
           status: Database["public"]["Enums"]["listing_status"]
+          target_buyer_id: string | null
           updated_at: string
           user_share_id: string
         }
@@ -503,11 +538,13 @@ export type Database = {
           id?: string
           issuer_approval?: string
           issuer_note?: string | null
+          payment_mode?: string
           price_per_share: number
           quantity: number
           seller_id: string
           sold_at?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
+          target_buyer_id?: string | null
           updated_at?: string
           user_share_id: string
         }
@@ -518,11 +555,13 @@ export type Database = {
           id?: string
           issuer_approval?: string
           issuer_note?: string | null
+          payment_mode?: string
           price_per_share?: number
           quantity?: number
           seller_id?: string
           sold_at?: string | null
           status?: Database["public"]["Enums"]["listing_status"]
+          target_buyer_id?: string | null
           updated_at?: string
           user_share_id?: string
         }
@@ -704,6 +743,95 @@ export type Database = {
           },
           {
             foreignKeyName: "share_transfers_user_share_id_fkey"
+            columns: ["user_share_id"]
+            isOneToOne: false
+            referencedRelation: "user_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_unit_history: {
+        Row: {
+          created_at: string
+          from_user_id: string | null
+          id: string
+          order_number: string | null
+          price_fcfa: number
+          to_user_id: string
+          transfer_type: string
+          unit_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          order_number?: string | null
+          price_fcfa?: number
+          to_user_id: string
+          transfer_type: string
+          unit_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          order_number?: string | null
+          price_fcfa?: number
+          to_user_id?: string
+          transfer_type?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_unit_history_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "share_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_units: {
+        Row: {
+          company_id: string
+          created_at: string
+          current_owner_id: string
+          id: string
+          last_price: number
+          serial: number
+          unit_code: string
+          user_share_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          current_owner_id: string
+          id?: string
+          last_price?: number
+          serial: number
+          unit_code: string
+          user_share_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          current_owner_id?: string
+          id?: string
+          last_price?: number
+          serial?: number
+          unit_code?: string
+          user_share_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_units_user_share_id_fkey"
             columns: ["user_share_id"]
             isOneToOne: false
             referencedRelation: "user_shares"
@@ -914,6 +1042,15 @@ export type Database = {
         Returns: undefined
       }
       assert_can_trade: { Args: { _user: string }; Returns: undefined }
+      buy_listing_units: {
+        Args: {
+          _buyer: string
+          _listing: string
+          _order: string
+          _unit_ids: string[]
+        }
+        Returns: Json
+      }
       cert_token: { Args: { _cert_id: string }; Returns: string }
       compute_transfer_hash: {
         Args: {
@@ -923,6 +1060,16 @@ export type Database = {
           _price: number
           _qty: number
           _to: string
+        }
+        Returns: string
+      }
+      create_unit_listing: {
+        Args: {
+          _mode: string
+          _price: number
+          _seller: string
+          _target_msn: string
+          _unit_ids: string[]
         }
         Returns: string
       }
@@ -972,7 +1119,27 @@ export type Database = {
           version: number
         }[]
       }
+      get_listing_units: {
+        Args: { _listing: string }
+        Returns: {
+          last_price: number
+          serial: number
+          transfers: number
+          unit_code: string
+          unit_id: string
+        }[]
+      }
       get_my_certificate_token: { Args: { _cert_id: string }; Returns: string }
+      get_unit_history: {
+        Args: { _unit: string }
+        Returns: {
+          created_at: string
+          from_label: string
+          price_fcfa: number
+          to_label: string
+          transfer_type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
