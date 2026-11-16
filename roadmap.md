@@ -3,4 +3,5 @@
 - [x] Étape 2 : KYC (pièce d'identité, téléphone), acceptation du risque avant 1er achat
 - [x] Étape 3 : espace émetteur (ses détenteurs, approbation des cessions, export registre PDF/CSV)
 - [x] Étape 4 : admin — gel utilisateur/titre/émetteur, plafonds 30 jours, vérification de chaîne, journal d'audit
-- [ ] Étape 5 : marché sous séquestre (achat concurrent sécurisé), passerelle Mobile Money (préparée, clés plus tard)
+- [x] Étape 5a : achat P2P atomique verrouillé (un seul acheteur)
+- [ ] Étape 5b : passerelle Mobile Money — en attente des clés du fournisseur

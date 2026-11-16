@@ -1005,6 +1005,10 @@ export type Database = {
         Args: { _company: string; _requires: boolean; _rules: string }
         Returns: undefined
       }
+      purchase_listing_atomic: {
+        Args: { _buyer: string; _listing: string; _order: string }
+        Returns: Json
+      }
       submit_kyc: { Args: never; Returns: undefined }
       verify_certificate: { Args: { _token: string }; Returns: Json }
       verify_chain: { Args: { _company_id: string }; Returns: Json }

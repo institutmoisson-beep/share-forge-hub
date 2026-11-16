@@ -225,89 +225,11 @@ serve(async (req) => {
         return json({ error: "Vous ne pouvez pas acheter votre propre annonce." }, 400);
       }
 
-      const buyerWallet = await getWallet(user.id);
-      const sellerWallet = await getWallet(listing.seller_id);
-      const total = Number(listing.price_per_share) * Number(listing.quantity);
-
-      if (Number(buyerWallet.balance) < total) {
-        return json({ error: "Solde insuffisant pour acheter cette annonce." }, 400);
-      }
-
-      const { data: sellerShare, error: sellerShareError } = await adminClient
-        .from("user_shares")
-        .select("*")
-        .eq("id", listing.user_share_id)
-        .eq("user_id", listing.seller_id)
-        .single();
-
-      if (sellerShareError || !sellerShare) {
-        return json({ error: "Le titre du vendeur est introuvable." }, 404);
-      }
-
-      if (Number(sellerShare.quantity) < Number(listing.quantity)) {
-        return json({ error: "Le vendeur ne dispose plus du volume annoncé." }, 400);
-      }
-
       const buyerOrderNumber = await generateOrderNumber();
-
-      const { error: buyerWalletError } = await adminClient.from("wallets").update({
-        balance: Number(buyerWallet.balance) - total,
-      }).eq("id", buyerWallet.id);
-      if (buyerWalletError) throw buyerWalletError;
-
-      const { error: sellerWalletError } = await adminClient.from("wallets").update({
-        balance: Number(sellerWallet.balance) + total,
-      }).eq("id", sellerWallet.id);
-      if (sellerWalletError) throw sellerWalletError;
-
-      const remainingQuantity = Number(sellerShare.quantity) - Number(listing.quantity);
-      if (remainingQuantity > 0) {
-        const { error: updateSellerShareError } = await adminClient.from("user_shares").update({
-          quantity: remainingQuantity,
-        }).eq("id", sellerShare.id);
-        if (updateSellerShareError) throw updateSellerShareError;
-      } else {
-        const { error: deleteSellerShareError } = await adminClient.from("user_shares").delete().eq("id", sellerShare.id);
-        if (deleteSellerShareError) throw deleteSellerShareError;
-      }
-
-      const { error: createBuyerShareError } = await adminClient.from("user_shares").insert({
-        user_id: user.id,
-        company_id: listing.company_id,
-        quantity: Number(listing.quantity),
-        purchase_price: Number(listing.price_per_share),
-        order_number: buyerOrderNumber,
+      const { error: rpcError } = await adminClient.rpc("purchase_listing_atomic", {
+        _listing: listing.id, _buyer: user.id, _order: buyerOrderNumber,
       });
-      if (createBuyerShareError) throw createBuyerShareError;
-
-      const { error: markSoldError } = await adminClient.from("p2p_listings").update({
-        status: "sold",
-        buyer_id: user.id,
-        sold_at: new Date().toISOString(),
-      }).eq("id", listing.id);
-      if (markSoldError) throw markSoldError;
-
-      const { error: buyerTxError } = await adminClient.from("wallet_transactions").insert({
-        wallet_id: buyerWallet.id,
-        user_id: user.id,
-        amount: total,
-        type: "purchase",
-        status: "approved",
-        description: `Achat P2P de ${listing.quantity} titre(s)`,
-        processed_at: new Date().toISOString(),
-      });
-      if (buyerTxError) throw buyerTxError;
-
-      const { error: sellerTxError } = await adminClient.from("wallet_transactions").insert({
-        wallet_id: sellerWallet.id,
-        user_id: listing.seller_id,
-        amount: total,
-        type: "sale",
-        status: "approved",
-        description: `Vente P2P de ${listing.quantity} titre(s)`,
-        processed_at: new Date().toISOString(),
-      });
-      if (sellerTxError) throw sellerTxError;
+      if (rpcError) return json({ error: rpcError.message }, 400);
 
       return json({ success: true, message: "Achat P2P confirmé.", orderNumber: buyerOrderNumber });
     }
