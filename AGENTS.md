@@ -1,0 +1,1 @@
+- Each share is a numbered row in share_units with append-only share_unit_history; resales go through create_unit_listing/buy_listing_units (service role, via platform-actions) — why: buyers pick exact title numbers and ownership must change atomically.
