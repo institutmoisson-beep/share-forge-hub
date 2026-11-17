@@ -6,10 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import SellUnitsDialog from "@/components/SellUnitsDialog";
 import BuyUnitsDialog, { type BuyListing } from "@/components/BuyUnitsDialog";
 
@@ -48,16 +44,6 @@ const Marketplace = () => {
         ...listing,
         sellerProfile: profilesByUserId[listing.seller_id],
       }));
-    },
-    enabled: !!user && !authLoading,
-  });
-
-  const { data: userShares = [] } = useQuery({
-    queryKey: ["marketplace-user-shares", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("user_shares").select("*, companies(name, price_per_share)").eq("user_id", user!.id);
-      if (error) throw error;
-      return data || [];
     },
     enabled: !!user && !authLoading,
   });

@@ -13,6 +13,7 @@ import {
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 import Navbar from "@/components/Navbar";
+import SellUnitsDialog from "@/components/SellUnitsDialog";
 import MyCertificates from "@/components/MyCertificates";
 import ComplianceCard from "@/components/ComplianceCard";
 import RegistryDisclaimer from "@/components/RegistryDisclaimer";
@@ -293,25 +294,6 @@ const MemberDashboard = () => {
       setTransferDesc("");
       await queryClient.invalidateQueries({ queryKey: ["wallet", user?.id] });
       await queryClient.invalidateQueries({ queryKey: ["transactions", user?.id] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const p2pMutation = useMutation({
-    mutationFn: () =>
-      invokePlatformAction("create_listing", {
-        userShareId: selectedShare?.id,
-        quantity: Number(p2pQty),
-        pricePerShare: Number(p2pPrice),
-      }),
-    onSuccess: async () => {
-      toast.success("Annonce publiée sur le marché secondaire.");
-      setP2pDialog(false);
-      setP2pPrice("");
-      setP2pQty("");
-      setSelectedShare(null);
-      await queryClient.invalidateQueries({ queryKey: ["user_shares"] });
-      await queryClient.invalidateQueries({ queryKey: ["my-active-listings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -884,77 +866,7 @@ const MemberDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ─── P2P DIALOG ─── */}
-      <Dialog open={p2pDialog} onOpenChange={setP2pDialog}>
-        <DialogContent style={{ background: "#0a0f1e", border: "1px solid rgba(168,85,247,0.2)" }}>
-          <DialogHeader>
-            <DialogTitle className="font-mono text-purple-400 tracking-wider">VENTE SUR LE MARCHÉ P2P</DialogTitle>
-            <DialogDescription className="font-mono text-white/30 text-xs">Publiez vos titres sur le marché secondaire entre membres.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="font-mono text-[10px] text-white/30 block mb-1.5">LIGNE DE TITRES *</label>
-              <select
-                value={selectedShare?.id || ""}
-                onChange={e => {
-                  const sh = shares.find(s => s.id === e.target.value);
-                  setSelectedShare(sh || null);
-                  if (sh) {
-                    setP2pQty(String(sh.quantity));
-                    setP2pPrice(String(Number(sh.companies?.price_per_share ?? sh.purchase_price)));
-                  }
-                }}
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono focus:outline-none focus:border-purple-500/30"
-              >
-                <option value="">— Sélectionner —</option>
-                {shares.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.companies?.name || "?"} · {s.quantity} titre(s)
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-mono text-[10px] text-white/30 block mb-1.5">QUANTITÉ *</label>
-                <input
-                  type="number"
-                  placeholder="Ex: 10"
-                  value={p2pQty}
-                  onChange={e => setP2pQty(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-purple-500/30"
-                />
-              </div>
-              <div>
-                <label className="font-mono text-[10px] text-white/30 block mb-1.5">PRIX/TITRE (FCFA) *</label>
-                <input
-                  type="number"
-                  placeholder="Ex: 15000"
-                  value={p2pPrice}
-                  onChange={e => setP2pPrice(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-purple-500/30"
-                />
-              </div>
-            </div>
-            {p2pPrice && p2pQty && (
-              <div className="rounded-xl bg-purple-500/5 border border-purple-500/15 p-3">
-                <p className="font-mono text-[10px] text-white/40">MONTANT TOTAL DE L'ANNONCE</p>
-                <p className="font-mono font-bold text-purple-400 text-lg">{fmtCurrency(Number(p2pPrice) * Number(p2pQty))}</p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <button onClick={() => setP2pDialog(false)} className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-xs font-mono">ANNULER</button>
-            <button
-              onClick={() => p2pMutation.mutate()}
-              disabled={p2pMutation.isPending || !selectedShare}
-              className="flex items-center gap-2 px-6 py-2 rounded-xl bg-purple-500/15 border border-purple-500/25 text-purple-400 text-xs font-mono hover:bg-purple-500/25 transition-all disabled:opacity-50"
-            >
-              {p2pMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}PUBLIER L'ANNONCE
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SellUnitsDialog open={p2pDialog} onOpenChange={setP2pDialog} initialShareId={selectedShare?.id} />
       <MyCertificates />
       <RegistryDisclaimer />
     </div>
