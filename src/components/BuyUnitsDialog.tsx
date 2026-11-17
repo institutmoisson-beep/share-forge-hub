@@ -15,7 +15,7 @@ export type BuyListing = { id: string; price_per_share: number; payment_mode?: s
 
 /** Buyer picks the exact title numbers to buy from one listing, then gets the PDF receipt. */
 const BuyUnitsDialog = ({ listing, onClose, onDone }: { listing: BuyListing | null; onClose: () => void; onDone?: () => void }) => {
-  const { user, profile } = useAuth() as ReturnType<typeof useAuth> & { profile?: { first_name: string; last_name: string; msn_id: string; phone: string | null } };
+  const { user, profile } = useAuth();
   const qc = useQueryClient();
   const [picked, setPicked] = useState<string[]>([]);
   const [historyOf, setHistoryOf] = useState<string | null>(null);
@@ -87,7 +87,7 @@ const BuyUnitsDialog = ({ listing, onClose, onDone }: { listing: BuyListing | nu
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:items-center">
           <p className="text-sm text-foreground sm:mr-auto">{picked.length} titre(s) · <span className="font-bold text-primary">{(picked.length * price).toLocaleString("fr")} FCFA</span></p>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
-          <Button variant="gold" disabled={busy || picked.length === 0 || listing.target_buyer_id === undefined && false} onClick={buy}>
+          <Button variant="gold" disabled={busy || picked.length === 0} onClick={buy}>
             {busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}{external ? "Confirmer la réception" : "Acheter"}
           </Button>
         </DialogFooter>

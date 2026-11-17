@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, ArrowLeftRight, Search, Building2 } from "lucide-react";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -10,15 +10,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { invokePlatformAction } from "@/lib/platform-actions";
+import SellUnitsDialog from "@/components/SellUnitsDialog";
+import BuyUnitsDialog, { type BuyListing } from "@/components/BuyUnitsDialog";
 
 const Marketplace = () => {
   const [search, setSearch] = useState("");
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
-  const [sellForm, setSellForm] = useState({ user_share_id: "", quantity: "", price_per_share: "" });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const { data: listings = [], isLoading } = useQuery({
     queryKey: ["p2p-listings", user?.id],
@@ -28,6 +27,7 @@ const Marketplace = () => {
         .select("*, companies(name, price_per_share)")
         .eq("status", "active")
         .in("issuer_approval", ["not_required", "approved"])
+        .is("target_buyer_id", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = data || [];
@@ -69,38 +69,17 @@ const Marketplace = () => {
       sellerMsn.toLowerCase().includes(search.toLowerCase());
   });
 
-  const buyMutation = useMutation({
-    mutationFn: async (listingId: string) => invokePlatformAction<{ orderNumber: string }>("purchase_listing", { listingId }),
-    onSuccess: async (response) => {
-      toast.success(`Achat confirmé. Référence: ${response.orderNumber}`);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["p2p-listings"] }),
-        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
-        queryClient.invalidateQueries({ queryKey: ["user_shares"] }),
-        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
-      ]);
-      navigate("/dashboard");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
+  const [buying, setBuying] = useState<BuyListing | null>(null);
 
-  const sellMutation = useMutation({
-    mutationFn: async () => invokePlatformAction("create_listing", {
-      userShareId: sellForm.user_share_id,
-      quantity: Number(sellForm.quantity),
-      pricePerShare: Number(sellForm.price_per_share),
-    }),
-    onSuccess: async () => {
-      toast.success("Votre annonce a été publiée.");
-      setSellDialogOpen(false);
-      setSellForm({ user_share_id: "", quantity: "", price_per_share: "" });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["p2p-listings"] }),
-        queryClient.invalidateQueries({ queryKey: ["marketplace-user-shares"] }),
-        queryClient.invalidateQueries({ queryKey: ["my-active-listings"] }),
-      ]);
+  const { data: offersForMe = [] } = useQuery({
+    queryKey: ["offers-for-me", user?.id],
+    enabled: !!user && !authLoading,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("p2p_listings").select("*, companies(name, price_per_share)")
+        .eq("status", "active").eq("target_buyer_id", user!.id).in("issuer_approval", ["not_required", "approved"]);
+      if (error) throw error;
+      return data || [];
     },
-    onError: (error: Error) => toast.error(error.message),
   });
 
   if (!authLoading && !user) {
@@ -132,6 +111,19 @@ const Marketplace = () => {
           </h1>
           <p className="text-muted-foreground">Achetez et revendez des titres directement entre membres.</p>
         </div>
+
+        {offersForMe.length > 0 && (
+          <div className="glass-card p-5 mb-8 space-y-3">
+            <h2 className="font-heading font-bold text-foreground">Offres qui vous sont adressées</h2>
+            {offersForMe.map((o) => (
+              <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-2 text-sm">
+                <span className="text-foreground">{o.companies?.name} · {o.quantity} titre(s) · {Number(o.price_per_share).toLocaleString()} FCFA/titre
+                  <span className="text-xs text-muted-foreground"> · {o.payment_mode === "external" ? "cession directe" : "gré à gré"}</span></span>
+                <Button size="sm" variant="gold" onClick={() => setBuying({ id: o.id, price_per_share: Number(o.price_per_share), payment_mode: o.payment_mode, target_buyer_id: o.target_buyer_id, companyName: o.companies?.name || "Entreprise" })}>Voir les titres</Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
@@ -193,8 +185,8 @@ const Marketplace = () => {
                         <p className="text-xs text-muted-foreground">Total</p>
                         <p className="font-heading font-bold text-foreground">{total.toLocaleString()} FCFA</p>
                       </div>
-                       <Button variant="gold" size="sm" onClick={() => buyMutation.mutate(listing.id)} disabled={buyMutation.isPending || listing.seller_id === user?.id}>
-                         {listing.seller_id === user?.id ? "Votre annonce" : buyMutation.isPending ? "Traitement..." : "Acheter"}
+                       <Button variant="gold" size="sm" onClick={() => setBuying({ id: listing.id, price_per_share: Number(listing.price_per_share), payment_mode: listing.payment_mode, target_buyer_id: listing.target_buyer_id, companyName, sellerMsn })} disabled={listing.seller_id === user?.id}>
+                         {listing.seller_id === user?.id ? "Votre annonce" : "Choisir les titres"}
                        </Button>
                     </div>
                   </div>
@@ -204,43 +196,8 @@ const Marketplace = () => {
           </div>
         )}
 
-        <Dialog open={sellDialogOpen} onOpenChange={setSellDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Publier une annonce</DialogTitle>
-              <DialogDescription>Sélectionnez les titres à céder et définissez votre prix unitaire.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Select value={sellForm.user_share_id} onValueChange={(value) => {
-                const share = userShares.find((item) => item.id === value);
-                setSellForm({
-                  user_share_id: value,
-                  quantity: share ? String(share.quantity) : "",
-                  price_per_share: share ? String(Number(share.companies?.price_per_share || share.purchase_price)) : "",
-                });
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir une ligne de titres" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userShares.map((share) => (
-                    <SelectItem key={share.id} value={share.id}>
-                      {(share.companies?.name || "Entreprise")} • {share.quantity} titre(s)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input type="number" placeholder="Quantité" value={sellForm.quantity} onChange={(event) => setSellForm((prev) => ({ ...prev, quantity: event.target.value }))} />
-              <Input type="number" placeholder="Prix par titre" value={sellForm.price_per_share} onChange={(event) => setSellForm((prev) => ({ ...prev, price_per_share: event.target.value }))} />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSellDialogOpen(false)}>Annuler</Button>
-              <Button variant="gold" onClick={() => sellMutation.mutate()} disabled={sellMutation.isPending || userShares.length === 0}>
-                {sellMutation.isPending ? "Publication..." : "Publier"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <SellUnitsDialog open={sellDialogOpen} onOpenChange={setSellDialogOpen} />
+        <BuyUnitsDialog listing={buying} onClose={() => setBuying(null)} onDone={() => navigate("/dashboard")} />
       </div>
     </div>
   );
