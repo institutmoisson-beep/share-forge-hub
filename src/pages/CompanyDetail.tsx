@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import BuyUnitsDialog, { type BuyListing } from "@/components/BuyUnitsDialog";
 import { invokePlatformAction } from "@/lib/platform-actions";
 
 const CompanyDetail = () => {
@@ -49,6 +50,7 @@ const CompanyDetail = () => {
         .eq("company_id", id!)
         .eq("status", "active")
         .in("issuer_approval", ["not_required", "approved"])
+        .is("target_buyer_id", null)
         .order("price_per_share", { ascending: true });
       return data || [];
     },
@@ -72,19 +74,8 @@ const CompanyDetail = () => {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const buyP2PMutation = useMutation({
-    mutationFn: async (listingId: string) => invokePlatformAction<{ orderNumber: string }>("purchase_listing", { listingId }),
-    onSuccess: async (response) => {
-      toast.success(`Titre acquis. Référence: ${response.orderNumber}`);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["company-p2p", id] }),
-        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
-        queryClient.invalidateQueries({ queryKey: ["user_shares"] }),
-      ]);
-      navigate("/dashboard");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
+  const [buying, setBuying] = useState<BuyListing | null>(null);
+
 
   if (isLoading) {
     return (
@@ -267,8 +258,8 @@ const CompanyDetail = () => {
                       <Button
                         variant="gold"
                         size="sm"
-                        disabled={l.seller_id === user?.id || buyP2PMutation.isPending}
-                        onClick={() => buyP2PMutation.mutate(l.id)}
+                        disabled={l.seller_id === user?.id}
+                        onClick={() => setBuying({ id: l.id, price_per_share: Number(l.price_per_share), payment_mode: l.payment_mode, target_buyer_id: l.target_buyer_id, companyName: company?.name || "Entreprise" })}
                       >
                         {l.seller_id === user?.id ? "Votre annonce" : "Acheter"}
                       </Button>
@@ -359,6 +350,7 @@ const CompanyDetail = () => {
           <img src={activeImage} alt="" className="max-h-full max-w-full object-contain rounded-lg" />
         </div>
       )}
+      <BuyUnitsDialog listing={buying} onClose={() => setBuying(null)} />
     </div>
   );
 };
