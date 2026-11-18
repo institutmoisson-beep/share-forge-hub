@@ -453,6 +453,9 @@ const AdminDashboard = () => {
                 {s?.pendingTx} EN ATTENTE
               </div>
             )}
+            <Button variant="ghost" size="sm" onClick={()=>window.open("/admin/activite","_blank","noopener")} className="text-xs border border-white/10">
+              <Activity className="h-3 w-3 mr-1.5"/>ACTIVITÉ LIVE
+            </Button>
             <Button variant="ghost" size="sm" onClick={()=>refetch()} className="text-xs text-white/50 hover:text-amber-400 border border-white/10">
               <RefreshCw className="h-3 w-3 mr-1.5"/>ACTUALISER
             </Button>
@@ -468,7 +471,7 @@ const AdminDashboard = () => {
             <KpiCard title="SOLDES PORTEFEUILLES" value={fmtShort(s?.totalBalance||0)+" FCFA"} sub="Total tous membres" icon={Wallet} accent="amber" trend={3.2} loading={isLoading}/>
           </div>
           <div className="col-span-2">
-            <KpiCard title="CAPITAL INVESTI" value={fmtShort(s?.totalInvested||0)+" FCFA"} sub="Achats de titres validés" icon={TrendingUp} accent="emerald" trend={8.4} loading={isLoading}/>
+            <KpiCard title="CAPITAL PARTICIPATIONS" value={fmtShort(s?.totalInvested||0)+" FCFA"} sub="Achats de titres validés" icon={TrendingUp} accent="emerald" trend={8.4} loading={isLoading}/>
           </div>
           <div className="col-span-2">
             <KpiCard title="DÉPÔTS VALIDÉS" value={fmtShort(s?.approvedDeposits||0)+" FCFA"} sub="Total reçu plateforme" icon={ArrowDownLeft} accent="blue" loading={isLoading}/>

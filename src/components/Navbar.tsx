@@ -11,6 +11,7 @@ const navItems = [
   { label: "Accueil", path: "/" },
   { label: "Entreprises", path: "/entreprises", icon: Briefcase },
   { label: "Marché secondaire", path: "/marketplace", icon: ShoppingCart },
+  { label: "Vérifier un titre", path: "/verifier" },
   { label: "Tableau de bord", path: "/dashboard", icon: BarChart3 },
 ];
 

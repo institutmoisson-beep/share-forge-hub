@@ -50,6 +50,13 @@
       "when": 1794990887502,
       "tag": "0006_tighten_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794991127049,
+      "tag": "0007_activity_and_unit_verify",
+      "breakpoints": true
     }
   ]
 }

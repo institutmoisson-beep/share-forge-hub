@@ -15,6 +15,9 @@ import RegisterPage from "./pages/Register.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Verify from "./pages/Verify.tsx";
 import Issuer from "./pages/Issuer.tsx";
+import VerifyTitle from "./pages/VerifyTitle.tsx";
+import AdminActivity from "./pages/AdminActivity.tsx";
+import ActivityTracker from "./components/ActivityTracker";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,7 @@ const App = () => (
         <Sonner />
         <PWAInstallPrompt />
         <BrowserRouter>
+          <ActivityTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/entreprises" element={<EntreprisesPage />} />
@@ -37,6 +41,8 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/verify/:token" element={<Verify />} />
+            <Route path="/verifier" element={<VerifyTitle />} />
+            <Route path="/admin/activite" element={<AdminActivity />} />
             <Route path="/emetteur" element={<Issuer />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

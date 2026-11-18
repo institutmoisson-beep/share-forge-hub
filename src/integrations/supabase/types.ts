@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          path: string
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event?: string
+          id?: string
+          path?: string
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          path?: string
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1009,6 +1039,7 @@ export type Database = {
     }
     Functions: {
       accept_risk_warning: { Args: never; Returns: string }
+      admin_activity_stats: { Args: never; Returns: Json }
       admin_audit_log: {
         Args: { _limit?: number }
         Returns: {
@@ -1188,6 +1219,7 @@ export type Database = {
       submit_kyc: { Args: never; Returns: undefined }
       verify_certificate: { Args: { _token: string }; Returns: Json }
       verify_chain: { Args: { _company_id: string }; Returns: Json }
+      verify_unit: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       app_role:
