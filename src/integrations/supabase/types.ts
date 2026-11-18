@@ -1130,6 +1130,15 @@ export type Database = {
         }[]
       }
       get_my_certificate_token: { Args: { _cert_id: string }; Returns: string }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          first_name: string
+          last_name: string
+          msn_id: string
+          user_id: string
+        }[]
+      }
       get_unit_history: {
         Args: { _unit: string }
         Returns: {

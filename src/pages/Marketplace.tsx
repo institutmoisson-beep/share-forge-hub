@@ -30,7 +30,7 @@ const Marketplace = () => {
       if (rows.length === 0) return [];
 
       const sellerIds = [...new Set(rows.map((listing) => listing.seller_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, msn_id, first_name, last_name").in("user_id", sellerIds);
+      const { data: profiles } = await supabase.rpc("get_public_profiles", { _ids: sellerIds });
       const profilesByUserId = (profiles || []).reduce<Record<string, { msn_id: string; first_name: string; last_name: string }>>((acc, profile) => {
         acc[profile.user_id] = {
           msn_id: profile.msn_id,

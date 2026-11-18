@@ -43,6 +43,13 @@
       "when": 1794824036138,
       "tag": "0005_numbered_share_units",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794990887502,
+      "tag": "0006_tighten_read_policies",
+      "breakpoints": true
     }
   ]
 }
