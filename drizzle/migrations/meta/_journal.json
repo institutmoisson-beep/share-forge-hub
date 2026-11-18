@@ -57,6 +57,13 @@
       "when": 1794991127049,
       "tag": "0007_activity_and_unit_verify",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794991391453,
+      "tag": "0008_restrict_settings_and_logo_listing",
+      "breakpoints": true
     }
   ]
 }
